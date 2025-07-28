@@ -1,0 +1,15 @@
+# 개발용 Dockerfile - 실시간 코드 반영
+FROM node:18
+
+WORKDIR /app
+
+# package.json 복사 및 의존성 설치
+COPY package*.json ./
+RUN npm install
+
+# 소스 코드는 볼륨으로 마운트되므로 복사하지 않음
+# COPY . .
+
+# 개발 서버 실행 (핫 리로드 활성화)
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"] 

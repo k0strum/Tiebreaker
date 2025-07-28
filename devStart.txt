@@ -1,0 +1,201 @@
+# 🚀 Tiebreaker 개발 환경 시작 가이드
+
+## 📋 기본 명령어
+
+### 1. 개발 환경 시작
+```bash
+# 모든 서비스 시작 (로그 확인)
+docker-compose -f docker-compose.dev.yml up
+
+# 백그라운드에서 시작
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+### 2. 개발 환경 중지
+```bash
+# 모든 서비스 중지
+docker-compose -f docker-compose.dev.yml down
+
+# 백그라운드 서비스만 중지 (컨테이너 유지)
+docker-compose -f docker-compose.dev.yml stop
+```
+
+### 3. 개발 환경 재시작
+```bash
+# 모든 서비스 재시작
+docker-compose -f docker-compose.dev.yml restart
+
+# 특정 서비스만 재시작
+docker-compose -f docker-compose.dev.yml restart api-server
+docker-compose -f docker-compose.dev.yml restart frontend
+docker-compose -f docker-compose.dev.yml restart data-collector
+```
+
+## 🔍 상태 확인 명령어
+
+### 1. 컨테이너 상태 확인
+```bash
+# 실행 중인 컨테이너 확인
+docker ps
+
+# 모든 컨테이너 확인 (중지된 것 포함)
+docker ps -a
+
+# 특정 서비스 로그 확인
+docker-compose -f docker-compose.dev.yml logs api-server
+docker-compose -f docker-compose.dev.yml logs frontend
+docker-compose -f docker-compose.dev.yml logs data-collector
+docker-compose -f docker-compose.dev.yml logs db
+```
+
+### 2. 실시간 로그 확인
+```bash
+# 모든 서비스 실시간 로그
+docker-compose -f docker-compose.dev.yml logs -f
+
+# 특정 서비스 실시간 로그
+docker-compose -f docker-compose.dev.yml logs -f api-server
+docker-compose -f docker-compose.dev.yml logs -f frontend
+```
+
+## 🛠️ 문제 해결 명령어
+
+### 1. 컨테이너 재빌드
+```bash
+# 특정 서비스 재빌드
+docker-compose -f docker-compose.dev.yml build api-server
+docker-compose -f docker-compose.dev.yml build frontend
+docker-compose -f docker-compose.dev.yml build data-collector
+
+# 모든 서비스 재빌드
+docker-compose -f docker-compose.dev.yml build
+```
+
+### 2. 컨테이너 내부 접속
+```bash
+# API 서버 컨테이너 접속
+docker exec -it tiebreaker-api-server-1 bash
+
+# 프론트엔드 컨테이너 접속
+docker exec -it tiebreaker-frontend-1 bash
+
+# 데이터 수집기 컨테이너 접속
+docker exec -it tiebreaker-data-collector-1 bash
+
+# 데이터베이스 컨테이너 접속
+docker exec -it tiebreak-db-dev mysql -u user -p
+# 비밀번호: password
+```
+
+### 3. 시스템 정리
+```bash
+# 사용하지 않는 컨테이너, 이미지, 네트워크 정리
+docker system prune -f
+
+# 볼륨까지 정리 (데이터 삭제됨)
+docker system prune -a --volumes
+```
+
+## 🌐 접속 주소
+
+### 개발 환경 접속
+- **프론트엔드**: http://localhost:5173
+- **API 서버**: http://localhost:8080
+- **데이터 수집기**: http://localhost:5001
+- **데이터베이스**: localhost:3307
+
+## 🔄 실시간 개발 기능
+
+### Spring Boot (API 서버)
+- 코드 수정 시 자동 재시작
+- DevTools 활성화됨
+- 로그: `docker-compose -f docker-compose.dev.yml logs -f api-server`
+
+### React (프론트엔드)
+- 코드 수정 시 핫 리로드
+- Vite 개발 서버 활성화됨
+- 로그: `docker-compose -f docker-compose.dev.yml logs -f frontend`
+
+### Flask (데이터 수집기)
+- 코드 수정 시 자동 재시작
+- 디버그 모드 활성화됨
+- 로그: `docker-compose -f docker-compose.dev.yml logs -f data-collector`
+
+## ⚡ 빠른 시작 스크립트
+
+### Windows (PowerShell)
+```powershell
+# 개발 환경 시작
+.\dev-start.bat
+
+# 또는 수동으로
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+### Linux/Mac (Bash)
+```bash
+# 개발 환경 시작
+./dev-start.sh
+
+# 또는 수동으로
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+## 📝 개발 워크플로우
+
+### 1. 개발 시작
+```bash
+# 1. 개발 환경 시작
+docker-compose -f docker-compose.dev.yml up -d
+
+# 2. 로그 확인 (새 터미널에서)
+docker-compose -f docker-compose.dev.yml logs -f
+```
+
+### 2. 개발 중
+- 코드 수정 → 자동 반영 확인
+- 브라우저에서 http://localhost:5173 접속
+- API 테스트: http://localhost:8080
+
+### 3. 개발 완료
+```bash
+# 컨테이너 중지
+docker-compose -f docker-compose.dev.yml down
+```
+
+## ⚠️ 주의사항
+
+### 포트 충돌 확인
+```bash
+# 포트 사용 중인지 확인
+netstat -an | findstr :8080
+netstat -an | findstr :5173
+netstat -an | findstr :5001
+netstat -an | findstr :3307
+```
+
+### 메모리 부족 시
+```bash
+# Docker 메모리 제한 확인
+docker system df
+
+# 불필요한 리소스 정리
+docker system prune -f
+```
+
+## 🎯 문제 해결 체크리스트
+
+### API 서버가 시작되지 않는 경우
+1. 데이터베이스 연결 확인
+2. 포트 8080 사용 중인지 확인
+3. 로그 확인: `docker-compose -f docker-compose.dev.yml logs api-server`
+
+### 프론트엔드가 시작되지 않는 경우
+1. Node.js 버전 확인
+2. 포트 5173 사용 중인지 확인
+3. 로그 확인: `docker-compose -f docker-compose.dev.yml logs frontend`
+
+### 데이터베이스 연결 실패
+1. MySQL 서비스 중지 확인
+2. 포트 3307 사용 중인지 확인
+3. 사용자 인증 정보 확인

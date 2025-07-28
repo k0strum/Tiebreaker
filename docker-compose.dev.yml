@@ -1,0 +1,56 @@
+services:
+  # DB 서비스 (동일)
+  db:
+    image: mysql:8.0
+    container_name: tiebreak-db-dev
+    ports:
+      - "3307:3306"  # 포트를 3307로 변경
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tiebreak_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - db-data:/var/lib/mysql
+
+  # 개발용 API 서버 (Spring Boot DevTools)
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api-server:/app
+      - /app/target # target 폴더는 동기화에서 제외
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      - db
+
+  # 개발용 데이터 수집 서버 (Flask 개발 모드)
+  data-collector:
+    build: ./data-collector
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./data-collector:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+
+  # 개발용 프론트엔드 (Vite 개발 서버)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # node_modules는 동기화에서 제외
+    depends_on:
+      - api-server
+
+volumes:
+  db-data:
