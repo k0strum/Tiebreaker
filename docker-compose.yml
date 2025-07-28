@@ -1,0 +1,47 @@
+services:
+  # DB 서비스
+  db:
+    image: mysql:8.0
+    container_name: tiebreak-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tiebreak_db
+      MYSQL_USER: k0strum
+      MYSQL_PASSWORD: 000217
+    volumes:
+      - db-data:/var/lib/mysql
+
+  # 메인 API 서버 (Spring Boot)
+  api-server:
+    build: ./api-server
+    ports:
+      - "8080:8080" # 내 PC 8080 -> 컨테이너 8080
+    volumes:
+      - ./api-server/src:/app/src
+      - /app/target # target 폴더는 동기화에서 제외
+    depends_on:
+      - db
+
+  # 데이터 수집 서버 (Python Flask)
+  data-collector:
+    build: ./data-collector
+    ports:
+      - "5001:5000" # 내 PC 5001 -> 컨테이너 5000
+    volumes:
+      - ./data-collector:/app
+
+  # 프론트엔드 서버 (React + Nginx)
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80" # 내 PC 5173 -> 컨테이너 80 (Nginx 기본 포트)
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # node_modules는 동기화에서 제외
+    depends_on: # api-server가 실행된 후에 frontend가 실행되도록 설정
+      - api-server
+
+volumes:
+  db-data:

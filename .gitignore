@@ -1,0 +1,28 @@
+# Dependencies (성능상 제외 권장)
+node_modules/
+*/node_modules/
+
+# Build outputs (성능상 제외 권장)
+dist/
+build/
+target/
+*/target/
+
+# Logs (개발 중 생성되는 파일들)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE files (선택사항 - 제거하고 싶다면 주석 해제)
+# .idea/
+# .vscode/
+
+# OS files
+.DS_Store
+Thumbs.db 

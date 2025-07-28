@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
@@ -8,26 +6,29 @@ function App() {
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="app-container">
+        <h1>⚾ Tiebreaker</h1>
+        <p className="subtitle">KBO 팬 플랫폼</p>
+        
+        <div className="card">
+          <button onClick={() => setCount((count) => count + 1)}>
+            카운트: {count}
+          </button>
+          <p>
+            <code>src/App.jsx</code>를 수정하고 저장하면 핫 리로드가 작동합니다
+          </p>
+        </div>
+        
+        <div className="features">
+          <h2>주요 기능</h2>
+          <ul>
+            <li>📊 선수 기록실</li>
+            <li>💬 실시간 채팅</li>
+            <li>🎯 승부 예측</li>
+            <li>🤖 AI 정보 챗봇</li>
+          </ul>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }

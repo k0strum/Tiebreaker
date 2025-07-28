@@ -1,0 +1,19 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+
+# Node
+node_modules
+npm-debug.log
+
+# Maven
+target
+
+# Python
+__pycache__
+venv
+*.pyc
