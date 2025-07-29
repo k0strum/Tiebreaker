@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo 🚀 Tiebreaker 개발 환경 시작...
 
 REM 기존 컨테이너 정리
