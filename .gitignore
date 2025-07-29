@@ -20,7 +20,8 @@ __pycache__/
 *$py.class
 
 # IDE files (선택사항 - 제거하고 싶다면 주석 해제)
-# .idea/
+.idea/
+*.iml
 # .vscode/
 
 # OS files
