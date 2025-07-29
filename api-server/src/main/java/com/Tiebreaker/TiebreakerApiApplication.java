@@ -1,4 +1,4 @@
-package com.k0strum.Tiebreaker;
+package com.Tiebreaker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
