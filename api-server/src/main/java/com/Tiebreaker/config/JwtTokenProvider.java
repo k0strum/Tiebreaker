@@ -6,19 +6,16 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.util.*;
 import javax.crypto.SecretKey;
 
 @Component
 public class JwtTokenProvider {
-    
-    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
-    
+    // 토큰 생성 시 사용되는 시크릿 키
     @Value("${jwt.secret}")
     private String secretKey;
     
+    // 토큰 유효 기간
     @Value("${jwt.validity}")
     private long validityInMilliseconds;
 
@@ -50,15 +47,15 @@ public class JwtTokenProvider {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            logger.warn("[JWT] 만료된 토큰입니다.");
+            System.out.println("[JWT] 만료된 토큰입니다.");
         } catch (UnsupportedJwtException e) {
-            logger.warn("[JWT] 지원하지 않는 토큰입니다.");
+            System.out.println("[JWT] 지원하지 않는 토큰입니다.");
         } catch (MalformedJwtException e) {
-            logger.warn("[JWT] 잘못된 형식의 토큰입니다.");
+            System.out.println("[JWT] 잘못된 형식의 토큰입니다.");
         } catch (SignatureException e) {
-            logger.warn("[JWT] 서명이 올바르지 않습니다.");
+            System.out.println("[JWT] 서명이 올바르지 않습니다.");
         } catch (IllegalArgumentException e) {
-            logger.warn("[JWT] 잘못된 토큰입니다.");
+            System.out.println("[JWT] 잘못된 토큰입니다.");
         }
         return false;
     }

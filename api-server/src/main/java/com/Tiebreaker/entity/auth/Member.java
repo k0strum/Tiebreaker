@@ -1,8 +1,8 @@
 package com.Tiebreaker.entity.auth;
 
 import com.Tiebreaker.constant.Role;
-import com.Tiebreaker.dto.auth.MemberCreateRequestDto;
-import com.Tiebreaker.dto.auth.MemberResponseDto;
+import com.Tiebreaker.dto.auth.MemberCreateRequest;
+import com.Tiebreaker.dto.auth.MemberResponse;
 import com.Tiebreaker.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,9 +46,15 @@ public class Member extends BaseTimeEntity{
   @Column(name = "mileage")
   private int mileage;
 
+  @Column(name = "login_type")
+  private String loginType; // "LOCAL", "KAKAO", "GOOGLE", "NAVER"
+
+  @Column(name = "social_id")
+  private String socialId; // 소셜 로그인 ID
+
 
   // DTO를 사용한 정적 팩토리 메서드(회원 정보 생성 시 사용)
-  public static Member from(MemberCreateRequestDto request,
+  public static Member from(MemberCreateRequest request,
                             PasswordEncoder passwordEncoder,
                             String profileImageName) {
     Member member = new Member();
@@ -60,12 +66,13 @@ public class Member extends BaseTimeEntity{
     member.setAddress(request.getAddress());
     member.setProfileImage(profileImageName);
     member.setMileage(0);
+    member.setLoginType("LOCAL");
     return member;
   }
 
   // DTO로 변환하는 메서드(회원 정보 조회 시 사용)
-  public MemberResponseDto toResponse() {
-    return MemberResponseDto.builder()
+  public MemberResponse toResponse() {
+    return MemberResponse.builder()
       .id(this.id)
       .email(this.email)
       .nickname(this.nickname)

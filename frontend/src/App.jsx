@@ -1,12 +1,17 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import './App.css'
 
+// AuthContext import
+import { AuthProvider } from './contexts/AuthContext.jsx'
+
 // 페이지 컴포넌트들 (나중에 별도 파일로 분리 가능)
 import Home from './pages/Home.jsx'
 import PlayerStats from './pages/PlayerStats.jsx'
 import Chat from './pages/Chat.jsx'
 import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
+import Login from './pages/auth/Login.jsx'
+import Signup from './pages/auth/Signup.jsx'
 
 // 헤더 컴포넌트 (나중에 별도 파일로 분리)
 const Header = () => (
@@ -47,6 +52,8 @@ const AppContent = () => {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/stats" element={<PlayerStats />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />
@@ -59,9 +66,11 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   )
 }
 
