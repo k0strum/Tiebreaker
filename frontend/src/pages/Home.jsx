@@ -1,215 +1,175 @@
-function Home() {
+import React from 'react';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { Link } from 'react-router-dom';
+
+const Home = () => {
+  const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, logout } = useAuth();
+
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold text-indigo-600 mb-6">🧪 더미 페이지</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 카드 1 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xl">
-              📊
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">통계 카드</h3>
-              <p className="text-sm text-gray-600">데이터 표시</p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* 메인 컨텐츠 */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* 환영 메시지 */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Tiebreaker에 오신 것을 환영합니다!
+            </h1>
+            <p className="text-lg text-gray-600">
+              축구 예측과 커뮤니티를 즐겨보세요
+            </p>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">총 사용자</span>
-              <span className="font-semibold">1,234명</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">활성 세션</span>
-              <span className="font-semibold text-green-600">567개</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">오늘 방문</span>
-              <span className="font-semibold text-blue-600">89명</span>
-            </div>
-          </div>
-        </div>
 
-        {/* 카드 2 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
-              ⚡
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">실시간 상태</h3>
-              <p className="text-sm text-gray-600">시스템 모니터링</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">서버 상태</span>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">정상</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">데이터베이스</span>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">연결됨</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">API 응답</span>
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">지연</span>
-            </div>
-          </div>
-        </div>
+          {/* 로그인 상태 표시 카드 */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              🔐 인증 상태 확인
+            </h2>
+            
+            {isLoggedIn ? (
+              <div className="space-y-4">
+                {/* 사용자 정보 */}
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src={profileImg} 
+                    alt="프로필" 
+                    className="w-16 h-16 rounded-full border-2 border-gray-200"
+                    onError={(e) => {
+                      e.target.src = '/images/profile-default.svg';
+                    }}
+                  />
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      안녕하세요, {nickname}님! 👋
+                    </h3>
+                    <p className="text-gray-600">{email}</p>
+                  </div>
+                </div>
 
-        {/* 카드 3 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-xl">
-              🎯
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">목표 달성</h3>
-              <p className="text-sm text-gray-600">진행률 표시</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">월간 목표</span>
-                <span className="font-semibold">75%</span>
+                {/* 상세 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <span className="font-medium text-gray-700">사용자 ID:</span>
+                    <span className="ml-2 text-gray-900">{memberId || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">역할:</span>
+                    <span className="ml-2 text-gray-900">{role}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">관리자 여부:</span>
+                    <span className="ml-2 text-gray-900">
+                      {isAdmin ? '✅ 관리자' : '❌ 일반 사용자'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">로그인 상태:</span>
+                    <span className="ml-2 text-green-600 font-semibold">✅ 로그인됨</span>
+                  </div>
+                </div>
+
+                {/* 로그아웃 버튼 */}
+                <div className="flex justify-center">
+                  <button 
+                    onClick={logout}
+                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{width: '75%'}}></div>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="text-gray-600">
+                  <p className="text-lg mb-2">현재 로그인되지 않은 상태입니다.</p>
+                  <p>로그인하여 서비스를 이용해보세요!</p>
+                </div>
+                
+                {/* 로그인/회원가입 버튼 */}
+                <div className="flex justify-center space-x-4">
+                  <Link 
+                    to="/login"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    로그인
+                  </Link>
+                  <Link 
+                    to="/signup"
+                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    회원가입
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">주간 목표</span>
-                <span className="font-semibold">90%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{width: '90%'}}></div>
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* 테이블 섹션 */}
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">📋 샘플 데이터 테이블</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left">ID</th>
-                <th className="px-4 py-2 text-left">이름</th>
-                <th className="px-4 py-2 text-left">상태</th>
-                <th className="px-4 py-2 text-left">생성일</th>
-                <th className="px-4 py-2 text-left">액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">#001</td>
-                <td className="px-4 py-2">김철수</td>
-                <td className="px-4 py-2">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">활성</span>
-                </td>
-                <td className="px-4 py-2">2024-06-15</td>
-                <td className="px-4 py-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">보기</button>
-                </td>
-              </tr>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">#002</td>
-                <td className="px-4 py-2">이영희</td>
-                <td className="px-4 py-2">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">대기</span>
-                </td>
-                <td className="px-4 py-2">2024-06-14</td>
-                <td className="px-4 py-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">보기</button>
-                </td>
-              </tr>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">#003</td>
-                <td className="px-4 py-2">박민수</td>
-                <td className="px-4 py-2">
-                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">비활성</span>
-                </td>
-                <td className="px-4 py-2">2024-06-13</td>
-                <td className="px-4 py-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">보기</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 버튼 섹션 */}
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">🔘 버튼 샘플</h2>
-        <div className="flex flex-wrap gap-4">
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            기본 버튼
-          </button>
-          <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-            성공 버튼
-          </button>
-          <button className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
-            위험 버튼
-          </button>
-          <button className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
-            경고 버튼
-          </button>
-          <button className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            아웃라인 버튼
-          </button>
-        </div>
-      </div>
-
-      {/* 알림 섹션 */}
-      <div className="mt-8 space-y-4">
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <span className="text-blue-400">ℹ️</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-blue-700">
-                이것은 정보 알림입니다. Tailwind CSS가 정상적으로 작동하고 있습니다.
+          {/* 기능 카드들 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 플레이어 통계 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="text-3xl mb-4">📊</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                플레이어 통계
+              </h3>
+              <p className="text-gray-600 mb-4">
+                선수들의 상세한 통계 정보를 확인해보세요
               </p>
+              <Link 
+                to="/stats"
+                className="text-blue-500 hover:text-blue-600 font-medium"
+              >
+                통계 보기 →
+              </Link>
             </div>
-          </div>
-        </div>
 
-        <div className="bg-green-50 border-l-4 border-green-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <span className="text-green-400">✅</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-green-700">
-                성공! 모든 컴포넌트가 올바르게 렌더링되었습니다.
+            {/* 예측 게임 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="text-3xl mb-4">⚽</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                예측 게임
+              </h3>
+              <p className="text-gray-600 mb-4">
+                경기 결과를 예측하고 포인트를 획득하세요
               </p>
+              <Link 
+                to="/predictions"
+                className="text-blue-500 hover:text-blue-600 font-medium"
+              >
+                예측하기 →
+              </Link>
             </div>
-          </div>
-        </div>
 
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <span className="text-yellow-400">⚠️</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                경고: 이것은 테스트용 더미 페이지입니다.
+            {/* 채팅 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="text-3xl mb-4">💬</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                실시간 채팅
+              </h3>
+              <p className="text-gray-600 mb-4">
+                다른 사용자들과 실시간으로 소통해보세요
               </p>
+              <Link 
+                to="/chat"
+                className="text-blue-500 hover:text-blue-600 font-medium"
+              >
+                채팅하기 →
+              </Link>
             </div>
           </div>
+
+          {/* 개발자 정보 */}
+          <div className="mt-12 text-center text-gray-500">
+            <p className="text-sm">
+              개발 중인 프로젝트입니다. 
+              <br />
+              로그인/회원가입 기능을 테스트해보세요!
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
-}
+};
 
 export default Home; 

@@ -7,8 +7,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import com.Tiebreaker.dto.auth.MemberCreateRequest;
 import com.Tiebreaker.dto.auth.MemberResponse;
+import com.Tiebreaker.dto.auth.LoginRequest;
+import com.Tiebreaker.dto.auth.LoginResponse;
 import com.Tiebreaker.repository.MemberRepository;
 import com.Tiebreaker.entity.auth.Member;
+import com.Tiebreaker.config.JwtTokenProvider;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +21,8 @@ public class MemberService {
   
   private final MemberRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final UserDetailsService userDetailsService;
 
   @Transactional
   public MemberResponse join(MemberCreateRequest request) {
@@ -30,6 +37,43 @@ public class MemberService {
     
     // 4. 회원 정보 반환
     return member.toResponse();
+  }
+
+  @Transactional(readOnly = true)
+  public LoginResponse login(LoginRequest request) {
+    // 1. 회원 존재 여부 확인
+    Member member = memberRepository.findByEmail(request.getEmail())
+      .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    
+    // 2. 소셜 로그인 회원인지 확인 (한 번만 체크)
+    if (!"LOCAL".equals(member.getLoginType())) {
+      throw new IllegalArgumentException("소셜 로그인으로 가입된 계정입니다. 소셜 로그인을 이용해 주세요.");
+    }
+    
+    // 3. UserDetails 로드
+    UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+    
+    // 4. 비밀번호 검증
+    if (!passwordEncoder.matches(request.getPassword(), userDetails.getPassword())) {
+      throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+    }
+    
+    // 5. JWT 토큰 생성
+    String token = jwtTokenProvider.createToken(
+      userDetails.getUsername(), 
+      userDetails.getAuthorities().stream()
+        .map(authority -> authority.getAuthority())
+        .toList()
+    );
+    
+    // 6. 로그인 응답 생성
+    return LoginResponse.builder()
+      .token(token)
+      .role(member.getRole())
+      .profileImage(member.getProfileImage() != null ? member.getProfileImage() : "")
+      .nickname(member.getNickname())
+      .memberId(member.getId())
+      .build();
   }
 
   // 입력값 검증

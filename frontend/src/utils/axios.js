@@ -1,24 +1,51 @@
 import axios from 'axios';
 
+/**
+ * axios 인스턴스 생성 - 백엔드 API와의 통신을 위한 설정
+ * 
+ * 주요 역할:
+ * 1. 모든 API 요청의 기본 설정 관리
+ * 2. JWT 토큰 자동 첨부
+ * 3. 로그인 시 토큰 자동 저장
+ * 4. 에러 처리 공통화
+ */
 const axiosInstance = axios.create({
-  baseURL: '/api',           // 모든 요청의 기본 URL
-  withCredentials: true,      // 쿠키 포함 (소셜 로그인 필수)
+  // 모든 API 요청의 기본 URL
+  // React 개발 서버의 proxy 설정을 통해 Spring Boot 서버로 연결됨
+  // 예: /api/members/login -> http://localhost:8080/api/members/login
+  baseURL: '/api',
+  
+  // 쿠키를 포함한 요청 허용 (소셜 로그인 등에서 필요)
+  withCredentials: true,
 });
 
-// 요청 시 토큰 자동 추가 (옵션: 로그인 구현된 경우)
+/**
+ * 요청 인터셉터 - 모든 API 요청이 서버로 가기 전에 실행
+ * 
+ * 주요 기능:
+ * 1. JWT 토큰 자동 첨부
+ * 2. FormData 처리 시 Content-Type 헤더 제거
+ * 3. 요청 로깅
+ */
 axiosInstance.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem('token') || localStorage.getItem('accessToken');
+  // localStorage에서 JWT 토큰 가져오기
+  // 'token' 또는 'accessToken' 키로 저장된 토큰 사용
+  const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+  
   if (token) {
+    // 토큰이 존재하면 Authorization 헤더에 Bearer 토큰으로 추가
     if (config.headers && typeof config.headers.set === 'function') {
-      // AxiosHeaders 객체일 때
+      // AxiosHeaders 객체일 때 (최신 버전)
       config.headers.set('Authorization', `Bearer ${token}`);
     } else {
-      // 일반 객체일 때
+      // 일반 객체일 때 (구버전 호환)
       config.headers = config.headers || {};
       config.headers['Authorization'] = `Bearer ${token}`;
     }
   }
+  
+  // FormData를 사용하는 경우 (파일 업로드 등)
+  // 브라우저가 자동으로 Content-Type을 설정하도록 헤더 제거
   if (config.data instanceof FormData) {
     if (config.headers && typeof config.headers.delete === 'function') {
       config.headers.delete('Content-Type');
@@ -26,113 +53,54 @@ axiosInstance.interceptors.request.use((config) => {
       delete config.headers['Content-Type'];
     }
   }
+  
+  // 개발용 요청 로깅 (프로덕션에서는 제거 가능)
   console.log('📡 axios 요청:', config.method?.toUpperCase(), config.url, config);
   return config;
 });
 
-// 응답 시 에러 처리 공통화
+/**
+ * 응답 인터셉터 - 서버로부터 응답을 받은 후 실행
+ * 
+ * 주요 기능:
+ * 1. 로그인 성공 시 토큰 자동 저장
+ * 2. 에러 응답 공통 처리
+ * 3. 에러 메시지 로깅
+ */
 axiosInstance.interceptors.response.use(
+  // 성공 응답 처리
   (res) => {
-    // 로그인 응답일 때 토큰 자동 저장
+    // 로그인 API 응답인지 확인
     if (
       res.config.url &&
       (res.config.url.endsWith('/members/login') ||
-        res.config.url.endsWith('/api/members/login') ||
-        res.config.url.endsWith('/auth/oauth2/kakao') ||
-        res.config.url.endsWith('/auth/oauth2/google') ||
-        res.config.url.endsWith('/auth/oauth2/naver'))
+        res.config.url.endsWith('/api/members/login'))
     ) {
+      // 로그인 성공 시 서버에서 받은 JWT 토큰을 localStorage에 저장
       if (res.data && res.data.token) {
         localStorage.setItem('token', res.data.token);
-      }
-      if (res.data && res.data.accessToken) {
-        localStorage.setItem('accessToken', res.data.accessToken);
-      }
-      if (res.data && res.data.refreshToken) {
-        localStorage.setItem('refreshToken', res.data.refreshToken);
-      }
-      // 사용자 정보도 저장
-      if (res.data && res.data.user) {
-        localStorage.setItem('user', JSON.stringify(res.data.user));
+        console.log('✅ 로그인 토큰 자동 저장 완료');
       }
     }
     return res;
   },
-  async (err) => {
+  
+  // 에러 응답 처리
+  (err) => {
+    // 전체 에러 정보 로깅
     console.error('[Axios Error]', err.response || err);
 
-    // 401 에러 (토큰 만료) 처리
-    if (err.response?.status === 401) {
-      const refreshToken = localStorage.getItem('refreshToken');
-      
-      if (refreshToken) {
-        try {
-          // 리프레시 토큰으로 새 토큰 발급 시도
-          const refreshResponse = await axios.post('/api/auth/refresh', {
-            refreshToken: refreshToken
-          });
-          
-          if (refreshResponse.data.accessToken) {
-            localStorage.setItem('accessToken', refreshResponse.data.accessToken);
-            
-            // 원래 요청 재시도
-            const originalRequest = err.config;
-            originalRequest.headers['Authorization'] = `Bearer ${refreshResponse.data.accessToken}`;
-            return axiosInstance(originalRequest);
-          }
-        } catch (refreshError) {
-          console.error('토큰 갱신 실패:', refreshError);
-        }
-      }
-      
-      // 토큰 갱신 실패 시 로그아웃 처리
-      localStorage.removeItem('token');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      
-      // 로그인 페이지로 리다이렉트
-      window.location.href = '/login';
-      return Promise.reject(err);
-    }
-
-    // 서버에서 보낸 에러 메시지가 있으면 그걸 사용
+    // 서버에서 보낸 구체적인 에러 메시지가 있으면 사용
     if (err.response?.data?.message) {
-      console.error(err.response.data.message);
+      console.error('서버 에러 메시지:', err.response.data.message);
     } else {
+      // 서버 에러 메시지가 없으면 기본 메시지 사용
       console.error('요청 처리 중 오류가 발생했습니다.');
     }
 
+    // 에러를 다시 던져서 컴포넌트에서 catch할 수 있도록 함
     return Promise.reject(err);
   }
 );
-
-// 유틸리티 함수들
-export const authAPI = {
-  // 로그인 상태 확인
-  isLoggedIn: () => {
-    return !!(localStorage.getItem('token') || localStorage.getItem('accessToken'));
-  },
-  
-  // 사용자 정보 가져오기
-  getUser: () => {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
-  },
-  
-  // 로그아웃
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    window.location.href = '/';
-  },
-  
-  // 토큰 가져오기
-  getToken: () => {
-    return localStorage.getItem('token') || localStorage.getItem('accessToken');
-  }
-};
 
 export default axiosInstance; 
