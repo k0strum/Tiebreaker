@@ -4,7 +4,7 @@ services:
     image: mysql:8.0
     container_name: tiebreak-db-dev
     ports:
-      - "3307:3306"  # 포트를 3307로 변경
+      - "3307:3306"  # 호스트 포트 : 컨테이너 포트
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tiebreak_db
