@@ -34,15 +34,15 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post('/api/members/login', {
         email: email,
         password: password
       });
 
-      const { token, role, profileImg, nickname, memberId } = response.data;
+      const { token, role, profileImage, nickname, memberId } = response.data;
       
       // AuthContext의 login 함수 호출
-      login(token, role, profileImg, nickname, memberId);
+      login(token, role, profileImage, nickname, memberId);
       
       // 로그인 성공 후 리다이렉트
       const from = location.state?.from?.pathname || '/';

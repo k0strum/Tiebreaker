@@ -14,7 +14,7 @@ import Chat from './pages/Chat.jsx'
 import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
 import Login from './pages/auth/Login.jsx'
-// import Signup from './pages/auth/Signup.jsx'
+import Signup from './pages/auth/Signup.jsx'
 
 // 조건부 헤더를 사용하는 메인 컴포넌트
 const AppContent = () => {
@@ -34,7 +34,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          {/* <Route path="/signup" element={<Signup />} /> */}
+          <Route path="/signup" element={<Signup />} />
           <Route path="/stats" element={<PlayerStats />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />
