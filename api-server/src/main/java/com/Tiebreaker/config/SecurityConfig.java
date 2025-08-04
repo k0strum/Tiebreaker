@@ -44,7 +44,7 @@ public class SecurityConfig {
                     "/api/members/login", // 로그인
                     "/oauth2/**", // 소셜 로그인 (향후 구현 시)
                     "/auth/**", // 소셜 로그인 콜백 (향후 구현 시)
-                    "/ws/**", "/sockjs-node/**", "/static/**", "/**/*.html" // WebSocket, 정적리소스
+                    "/ws/**", "/sockjs-node/**", "/static/**", "/*.html" // WebSocket, 정적리소스
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
