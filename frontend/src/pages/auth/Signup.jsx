@@ -151,11 +151,11 @@ function Signup() {
         address: formData.address || null
       };
 
-      const response = await axios.post('/api/members/join', signupData);
+      const response = await axios.post('/members/join', signupData);
       
       console.log('회원가입 성공:', response.data);
       
-             // 회원가입 성공 후 로그인 페이지로 이동
+       // 회원가입 성공 후 로그인 페이지로 이동
        // TODO: 이메일 인증 기능 추가 예정
        alert('회원가입이 완료되었습니다! 로그인해주세요.');
        navigate('/login');
