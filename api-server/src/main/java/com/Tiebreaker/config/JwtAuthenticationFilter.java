@@ -26,6 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
+        // 인증이 필요하지 않은 경로는 필터를 건너뛰기
+        String requestURI = request.getRequestURI();
+        if (shouldNotFilter(requestURI)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             // 1. 요청에서 JWT 토큰 추출
             String token = getTokenFromRequest(request);
@@ -47,10 +54,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            logger.error("JWT 토큰 처리 중 오류 발생: {}");
+            logger.error("JWT 토큰 처리 중 오류 발생: " + e.getMessage());
         }
         
         filterChain.doFilter(request, response);
+    }
+
+    // 인증이 필요하지 않은 경로인지 확인
+    private boolean shouldNotFilter(String requestURI) {
+        return requestURI.equals("/api/members/join") || 
+               requestURI.equals("/api/members/login") ||
+               requestURI.startsWith("/actuator/") ||
+               requestURI.equals("/") ||
+               requestURI.startsWith("/css/") ||
+               requestURI.startsWith("/js/") ||
+               requestURI.startsWith("/img/") ||
+               requestURI.startsWith("/images/") ||
+               requestURI.startsWith("/profile/") ||
+               requestURI.startsWith("/static/") ||
+               requestURI.endsWith(".html") ||
+               requestURI.endsWith(".ico");
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
