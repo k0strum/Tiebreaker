@@ -23,13 +23,13 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 
-    public String createToken(String email, List<String> roles) {
+    public String createToken(String email, String role) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
         SecretKey key = getSigningKey();
         return Jwts.builder()
                 .subject(email)
-                .claim("roles", roles)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key, Jwts.SIG.HS256)

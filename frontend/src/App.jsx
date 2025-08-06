@@ -15,13 +15,16 @@ import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
+import SignupComplete from './pages/auth/SignupComplete.jsx'
+import EmailVerification from './pages/auth/EmailVerification.jsx'
+import OAuthCallback from './pages/auth/OAuthCallback.jsx'
 
 // 조건부 헤더를 사용하는 메인 컴포넌트
 const AppContent = () => {
   const location = useLocation();
   
   // 헤더를 숨길 경로들
-  const hideHeaderPaths = ['/login', '/signup', '/reset-pw', '/admin'];
+  const hideHeaderPaths = ['/login', '/signup', '/signup-complete', '/verify-email', '/reset-pw', '/admin', '/oauth-callback'];
   
   // 현재 경로가 헤더를 숨겨야 하는지 확인
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
@@ -35,6 +38,9 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/signup-complete" element={<SignupComplete />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/stats" element={<PlayerStats />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />

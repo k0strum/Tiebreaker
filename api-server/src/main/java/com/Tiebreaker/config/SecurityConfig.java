@@ -2,6 +2,9 @@ package com.Tiebreaker.config;
 
 import java.util.Arrays;
 
+import com.Tiebreaker.service.auth.CustomAuthenticationFailureHandler;
+import com.Tiebreaker.service.auth.CustomAuthenticationSuccessHandler;
+import com.Tiebreaker.service.auth.CustomOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -30,6 +33,9 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,31 +45,30 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/images/**", "/profile/**",
+                    "/", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/images/**", "/profile/**", "/uploads/**",
                     "/api/members/join", // 회원가입
                     "/api/members/login", // 로그인
-                    "/oauth2/**", // 소셜 로그인 (향후 구현 시)
-                    "/auth/**", // 소셜 로그인 콜백 (향후 구현 시)
+                    "/api/email/verify",
+                    "/api/oauth/**", // OAuth 관련 API
+                    "/oauth2/authorization/**", // 소셜 로그인 시작
+                    "/login/oauth2/code/**", // 소셜 로그인 콜백
                     "/ws/**", "/sockjs-node/**", "/static/**", "/*.html" // WebSocket, 정적리소스
                 ).permitAll()
+                .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**").authenticated()
+                .anyRequest().authenticated()
             )
             .addFilterBefore(
                 new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService), 
                 UsernamePasswordAuthenticationFilter.class
             )
-            // 소셜 로그인 설정 (향후 구현 시 주석 해제)
-            /*
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/members/login")
                 .successHandler(customAuthenticationSuccessHandler)
                 .failureHandler(customAuthenticationFailureHandler)
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
             )
-            */
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/api/members/logout"))
                 .logoutSuccessUrl("/")
@@ -77,7 +82,8 @@ public class SecurityConfig {
                         response.setContentType("application/json;charset=UTF-8");
                         response.getWriter().write("{\"message\":\"인증이 필요합니다.\"}");
                     } else {
-                        response.sendRedirect("/members/login");
+                        // 웹 페이지 요청의 경우 프론트엔드로 리다이렉트
+                        response.sendRedirect("http://localhost:5173/login");
                     }
                 })
             );

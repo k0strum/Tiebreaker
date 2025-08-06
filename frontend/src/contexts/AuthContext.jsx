@@ -60,6 +60,11 @@ export const AuthProvider = ({ children }) => {
    * 관리자 여부 - role이 'ADMIN'인지 확인
    */
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  /**
+   * 로그인 타입 - LOCAL, KAKAO, GOOGLE, NAVER
+   */
+  const [loginType, setLoginType] = useState(localStorage.getItem('loginType') || '');
 
   // ===== 로그인 함수 =====
   
@@ -71,8 +76,9 @@ export const AuthProvider = ({ children }) => {
    * @param {string} profileImg - 프로필 이미지 URL
    * @param {string} nickname - 사용자 닉네임
    * @param {string|number} memberId - 사용자 고유 ID
+   * @param {string} loginType - 로그인 타입 (LOCAL, KAKAO, GOOGLE, NAVER)
    */
-  const login = (token, role, profileImg, nickname, memberId) => {
+  const login = (token, role, profileImg, nickname, memberId, loginType = 'LOCAL') => {
     try {
       // JWT 토큰을 디코딩하여 사용자 정보 추출
       const decoded = jwtDecode(token);
@@ -85,6 +91,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('member_Nickname', nickname || '');
       localStorage.setItem('email', userEmail);
       localStorage.setItem('memberId', memberId || '');
+      localStorage.setItem('loginType', loginType);
 
       // React 상태 업데이트
       setIsLoggedIn(true);
@@ -98,6 +105,7 @@ export const AuthProvider = ({ children }) => {
       setEmail(userEmail);
       setMemberId(memberId);
       setIsAdmin(role === 'ADMIN');
+      setLoginType(loginType);
       
     } catch (error) {
       console.error("로그인 처리 중 토큰 디코딩 실패", error);
@@ -120,6 +128,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('member_Nickname');
     localStorage.removeItem('email');
     localStorage.removeItem('memberId');
+    localStorage.removeItem('loginType');
     
     // React 상태 초기화
     setIsLoggedIn(false);
@@ -129,6 +138,7 @@ export const AuthProvider = ({ children }) => {
     setEmail(null);
     setMemberId(null);
     setIsAdmin(false);
+    setLoginType('');
   };
 
   // ===== 페이지 새로고침 시 상태 복원 =====
@@ -157,6 +167,7 @@ export const AuthProvider = ({ children }) => {
           setNickname(localStorage.getItem('member_Nickname') || '');
           setEmail(localStorage.getItem('email') || decoded.sub);
           setMemberId(localStorage.getItem('memberId') || null);
+          setLoginType(localStorage.getItem('loginType') || '');
           
           const savedImg = localStorage.getItem('member_ProfileImg');
           setProfileImg(savedImg && savedImg.trim() !== '' ? savedImg : '/images/profile-default.svg');
@@ -189,6 +200,7 @@ export const AuthProvider = ({ children }) => {
       email,         // 이메일
       memberId,      // 사용자 ID
       isAdmin,       // 관리자 여부
+      loginType,     // 로그인 타입
       
       // 함수들
       login,         // 로그인 함수

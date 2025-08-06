@@ -40,7 +40,7 @@ public class Member extends BaseTimeEntity{
   @Column(name = "address")
   private String address;
 
-  @Column(name = "profile_image")
+  @Column(name = "profile_image", length = 500)
   private String profileImage;
 
   @Column(name = "mileage")
@@ -52,6 +52,13 @@ public class Member extends BaseTimeEntity{
   @Column(name = "social_id")
   private String socialId; // 소셜 로그인 ID
 
+  @Column(name = "email_verified", nullable = false)
+  private boolean emailVerified = false; // 이메일 인증 완료 여부
+
+  // 이메일 인증 완료 여부 확인 메서드
+  public boolean isEmailVerified() {
+    return this.emailVerified;
+  }
 
   // DTO를 사용한 정적 팩토리 메서드(회원 정보 생성 시 사용)
   public static Member from(MemberCreateRequest request,
@@ -67,6 +74,7 @@ public class Member extends BaseTimeEntity{
     member.setProfileImage(profileImageName);
     member.setMileage(0);
     member.setLoginType("LOCAL");
+    member.setEmailVerified(false); // 회원가입 시 이메일 미인증 상태
     return member;
   }
 
