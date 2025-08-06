@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
-  const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, logout } = useAuth();
+  const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, loginType, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -15,9 +15,6 @@ const Home = () => {
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Tiebreaker에 오신 것을 환영합니다!
             </h1>
-            <p className="text-lg text-gray-600">
-              축구 예측과 커뮤니티를 즐겨보세요
-            </p>
           </div>
 
           {/* 로그인 상태 표시 카드 */}
@@ -60,6 +57,16 @@ const Home = () => {
                     <span className="font-medium text-gray-700">관리자 여부:</span>
                     <span className="ml-2 text-gray-900">
                       {isAdmin ? '✅ 관리자' : '❌ 일반 사용자'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">로그인 타입:</span>
+                    <span className="ml-2 text-gray-900">
+                      {loginType === 'LOCAL' && '일반 로그인'}
+                      {loginType === 'GOOGLE' && 'Google 로그인'}
+                      {loginType === 'KAKAO' && '카카오 로그인'}
+                      {loginType === 'NAVER' && '네이버 로그인'}
+                      {!loginType && '알 수 없음'}
                     </span>
                   </div>
                   <div>

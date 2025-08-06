@@ -3,8 +3,8 @@ chcp 65001 >nul
 echo 🚀 Tiebreaker 개발 환경 시작...
 
 REM 기존 컨테이너 정리
-echo 🧹 기존 컨테이너 정리 중...
-docker-compose -f docker-compose.dev.yml down
+echo 🧹 기존 컨테이너 & 볼륨 정리 중...
+docker-compose -f docker-compose.dev.yml down --volumes
 if %errorlevel% neq 0 (
     echo ❌ 컨테이너 정리 중 오류가 발생했습니다.
     pause
