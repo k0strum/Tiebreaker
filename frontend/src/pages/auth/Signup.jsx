@@ -12,6 +12,8 @@ function Signup() {
     phone: '',
     address: ''
   });
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,9 +37,23 @@ function Signup() {
       ...prev,
       [name]: value
     }));
-    
+
     // 실시간 유효성 검사
     validateField(name, value);
+  };
+
+    // 연락처 하이픈 자동 입력
+  const handlePhoneChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    let formatted = value;
+    if (value.length >= 7) {
+      formatted = value.replace(/(\d{3})(\d{4})(\d{0,4})/, '$1-$2-$3').replace(/-$/, '');
+    } else if (value.length >= 4) {
+      formatted = value.replace(/(\d{3})(\d{0,4})/, '$1-$2');
+    }
+    setFormData(f => ({ ...f, phone: formatted }));
+    setValidationErrors(err => ({ ...err, phone: undefined }));
   };
 
   // 필드별 유효성 검사
@@ -112,6 +128,47 @@ function Signup() {
     setValidationErrors(errors);
   };
 
+  // 프로필 이미지 업로드 처리
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // 파일 크기 검증 (5MB 이하)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('프로필 이미지는 5MB 이하여야 합니다.');
+        return;
+      }
+      
+      // 파일 타입 검증
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('지원되는 이미지 형식: JPG, PNG, GIF, WEBP');
+        return;
+      }
+      
+      setProfileImage(file);
+      
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      
+      setError(''); // 에러 메시지 초기화
+    }
+  };
+
+  // 프로필 이미지 제거
+  const handleRemoveProfileImage = () => {
+    setProfileImage(null);
+    setProfileImagePreview(null);
+    // 파일 입력 필드 초기화
+    const fileInput = document.getElementById('profileImage');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   // 전체 폼 유효성 검사
   const validateForm = () => {
     const errors = {};
@@ -142,16 +199,24 @@ function Signup() {
     setError('');
 
     try {
-      // 백엔드 API에 전송할 데이터 (MemberCreateRequest 구조에 맞춤)
-      const signupData = {
-        email: formData.email,
-        password: formData.password,
-        nickname: formData.nickname,
-        phone: formData.phone || null,
-        address: formData.address || null
-      };
+      // FormData를 사용하여 파일 업로드
+      const formDataToSend = new FormData();
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('nickname', formData.nickname);
+      if (formData.phone) formDataToSend.append('phone', formData.phone);
+      if (formData.address) formDataToSend.append('address', formData.address);
+      
+      // 프로필 이미지가 있는 경우 추가
+      if (profileImage) {
+        formDataToSend.append('profileImage', profileImage);
+      }
 
-      const response = await axios.post('/members/join', signupData);
+      const response = await axios.post('/members/join', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
        
       console.log('회원가입 성공:', response.data);
       console.log('리다이렉트 전 현재 URL:', window.location.href);
@@ -184,7 +249,7 @@ function Signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="sm:mx-auto sm:w-full sm:max-w-3xl">
         <div className="text-center">
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 mb-4">
             <span className="text-2xl font-bold text-white">⚾</span>
@@ -196,8 +261,8 @@ function Signup() {
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-3xl">
+        <div className="bg-white py-8 px-10 shadow-xl rounded-2xl border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* 이메일 입력 필드 */}
             <div>
@@ -361,6 +426,70 @@ function Signup() {
               </div>
             </div>
 
+            {/* 프로필 이미지 업로드 필드 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                프로필 이미지 <span className="text-gray-500 text-xs">(선택)</span>
+              </label>
+              <div className="space-y-4">
+                {/* 이미지 미리보기 */}
+                {profileImagePreview && (
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <img
+                        src={profileImagePreview}
+                        alt="프로필 미리보기"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveProfileImage}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">
+                        {profileImage?.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(profileImage?.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 파일 업로드 버튼 */}
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="profileImage"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="mb-2 text-sm text-gray-500">
+                        <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
+                      </p>
+                      <p className="text-xs text-gray-500">JPG, PNG, GIF, WEBP (최대 5MB)</p>
+                    </div>
+                    <input
+                      id="profileImage"
+                      name="profileImage"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfileImageChange}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* 전화번호 입력 필드 (선택사항) */}
             <div>
               <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -373,7 +502,7 @@ function Signup() {
                   type="tel"
                   autoComplete="tel"
                   value={formData.phone}
-                  onChange={handleInputChange}
+                  onChange={handlePhoneChange}
                   className={`appearance-none block w-full px-4 py-3 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 ${
                     validationErrors.phone ? 'border-red-300' : 'border-gray-300'
                   }`}

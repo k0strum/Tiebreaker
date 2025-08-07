@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { Link } from 'react-router-dom';
+import ProfileImage from '../components/ProfileImage';
 
 const Home = () => {
   const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, loginType, logout } = useAuth();
@@ -27,14 +28,7 @@ const Home = () => {
               <div className="space-y-4">
                 {/* 사용자 정보 */}
                 <div className="flex items-center space-x-4">
-                  <img 
-                    src={profileImg} 
-                    alt="프로필" 
-                    className="w-16 h-16 rounded-full border-2 border-gray-200"
-                    onError={(e) => {
-                      e.target.src = '/images/profile-default.svg';
-                    }}
-                  />
+                  <ProfileImage src={profileImg} alt="프로필" size="xl" />
                   <div>
                     <h3 className="text-xl font-semibold text-gray-800">
                       안녕하세요, {nickname}님! 👋

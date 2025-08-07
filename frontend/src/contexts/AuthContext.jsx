@@ -22,6 +22,35 @@ export const AuthProvider = ({ children }) => {
   // ===== 상태 관리 =====
   
   /**
+   * 프로필 이미지 URL을 완전한 URL로 변환하는 함수
+   * @param {string} imageUrl - 상대 경로 또는 완전한 URL
+   * @returns {string} 완전한 이미지 URL
+   */
+  const getFullProfileImageUrl = (imageUrl) => {
+    if (!imageUrl || imageUrl.trim() === '') {
+      return '/images/profile-default.svg';
+    }
+    
+    // 이미 완전한 URL인 경우 (http:// 또는 https://로 시작)
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    // 백엔드 API 경로인 경우 (예: /api/members/images/profile/xxx.jpg)
+    if (imageUrl.startsWith('/api/')) {
+      return `http://localhost:8080${imageUrl}`;
+    }
+    
+    // 기본 이미지인 경우
+    if (imageUrl === '/images/profile-default.svg') {
+      return imageUrl;
+    }
+    
+    // 그 외의 경우 기본 이미지 반환
+    return '/images/profile-default.svg';
+  };
+  
+  /**
    * 로그인 상태 - localStorage의 토큰 존재 여부로 초기화
    * !! 연산자로 boolean 값으로 변환
    */
@@ -33,7 +62,7 @@ export const AuthProvider = ({ children }) => {
    */
   const [profileImg, setProfileImg] = useState(() => {
     const savedImg = localStorage.getItem('member_ProfileImg');
-    return savedImg && savedImg.trim() !== '' ? savedImg : '/images/profile-default.svg';
+    return getFullProfileImageUrl(savedImg);
   });
   
   /**
@@ -98,8 +127,8 @@ export const AuthProvider = ({ children }) => {
       setRole(role);
       setNickname(nickname || '');
       
-      // 프로필 이미지가 없거나 빈 문자열인 경우 기본 이미지 사용
-      const finalProfileImg = profileImg && profileImg.trim() !== '' ? profileImg : '/images/profile-default.svg';
+      // 프로필 이미지 URL 처리
+      const finalProfileImg = getFullProfileImageUrl(profileImg);
       setProfileImg(finalProfileImg);
       
       setEmail(userEmail);
@@ -170,7 +199,7 @@ export const AuthProvider = ({ children }) => {
           setLoginType(localStorage.getItem('loginType') || '');
           
           const savedImg = localStorage.getItem('member_ProfileImg');
-          setProfileImg(savedImg && savedImg.trim() !== '' ? savedImg : '/images/profile-default.svg');
+          setProfileImg(getFullProfileImageUrl(savedImg));
           
         } else {
           // 토큰이 만료되었으면 로그아웃 처리

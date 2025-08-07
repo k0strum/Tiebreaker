@@ -48,6 +48,7 @@ public class SecurityConfig {
                     "/", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/images/**", "/profile/**", "/uploads/**",
                     "/api/members/join", // 회원가입
                     "/api/members/login", // 로그인
+                    "/api/members/images/**", // 프로필 이미지 서빙
                     "/api/email/verify",
                     "/api/oauth/**", // OAuth 관련 API
                     "/oauth2/authorization/**", // 소셜 로그인 시작

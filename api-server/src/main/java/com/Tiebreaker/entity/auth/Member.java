@@ -80,6 +80,16 @@ public class Member extends BaseTimeEntity{
 
   // DTO로 변환하는 메서드(회원 정보 조회 시 사용)
   public MemberResponse toResponse() {
+    // 프로필 이미지 URL 처리
+    String profileImageUrl = null;
+    if (this.profileImage != null && !this.profileImage.trim().isEmpty()) {
+      if ("profile-default.svg".equals(this.profileImage)) {
+        profileImageUrl = "/api/members/images/profile-default.svg";
+      } else {
+        profileImageUrl = "/api/members/images/profile/" + this.profileImage;
+      }
+    }
+    
     return MemberResponse.builder()
       .id(this.id)
       .email(this.email)
@@ -87,7 +97,7 @@ public class Member extends BaseTimeEntity{
       .role(this.role)
       .phone(this.phone)
       .address(this.address)
-      .profileImage(this.profileImage)
+      .profileImage(profileImageUrl)
       .mileage(this.mileage)
       .regDate(this.getRegDate())
       .updateDate(this.getUpdateDate())
