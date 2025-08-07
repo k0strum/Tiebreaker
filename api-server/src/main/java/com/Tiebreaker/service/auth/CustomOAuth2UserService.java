@@ -3,6 +3,7 @@ package com.Tiebreaker.service.auth;
 import com.Tiebreaker.entity.auth.Member;
 import com.Tiebreaker.repository.MemberRepository;
 import com.Tiebreaker.constant.Role;
+import com.Tiebreaker.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -73,6 +74,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
       
       // 같은 소셜 로그인 타입이거나 다른 소셜 로그인 타입인 경우 허용
       // (소셜 로그인 사용자는 다른 소셜 로그인으로도 로그인 가능)
+      
+      // 기존 회원의 경우 프로필 이미지는 유지 (최초 회원가입 시의 이미지 사용)
+      System.out.println("기존 회원 로그인 - 프로필 이미지 유지: " + member.getProfileImage());
+      
       return new DefaultOAuth2User(
               Collections.singleton(new SimpleGrantedAuthority(member.getRole().toString())),
               attributes,
@@ -80,17 +85,25 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
       );
     } else {
       // 새 회원인 경우 회원가입 처리
+      System.out.println("=== 새 회원 소셜 회원가입 ===");
       Member newMember = new Member();
       
-      // 프로필 이미지 처리
+      // 프로필 이미지 처리 (최초 회원가입 시에만 다운로드)
       String savedProfileImgPath = null;
       if (originalProfileImageUrl != null && !originalProfileImageUrl.trim().isEmpty()) {
-        savedProfileImgPath = imageService.downloadAndSaveImage(originalProfileImageUrl, "profile");
+        System.out.println("프로필 이미지 다운로드 시작: " + originalProfileImageUrl);
+        savedProfileImgPath = imageService.downloadAndSaveProfileImage(originalProfileImageUrl);
+        System.out.println("프로필 이미지 다운로드 완료: " + savedProfileImgPath);
+      } else {
+        System.out.println("프로필 이미지 URL이 없어 기본 이미지 사용");
       }
       
       System.out.println("소셜 로그인 attributes: " + attributes);
       
-             newMember.setProfileImage(savedProfileImgPath);
+      // 파일명만 저장 (URL에서 파일명 추출)
+      String profileImageName = extractFileNameFromUrl(savedProfileImgPath);
+      System.out.println("저장할 프로필 이미지 파일명: " + profileImageName);
+      newMember.setProfileImage(profileImageName);
        newMember.setEmail(email);
        newMember.setNickname(name != null ? name : "사용자");
        newMember.setRole(Role.USER);
@@ -217,5 +230,22 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
     // 기본: 구글 등 기타
     return (String) attributes.get("sub");
+  }
+
+  private String extractFileNameFromUrl(String url) {
+    if (url == null || url.isEmpty()) {
+      return null;
+    }
+    
+    // URL에서 파일명만 추출 (마지막 / 이후 부분)
+    String[] parts = url.split("/");
+    String fileName = parts[parts.length - 1];
+    
+    // URL 파라미터가 있는 경우 제거
+    if (fileName.contains("?")) {
+      fileName = fileName.substring(0, fileName.indexOf("?"));
+    }
+    
+    return fileName;
   }
 }

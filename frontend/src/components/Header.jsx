@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ProfileImage from './ProfileImage';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { isLoggedIn, profileImg, nickname, logout } = useAuth();
   const location = useLocation();
 
   const navigationItems = [
@@ -36,16 +37,18 @@ const Header = () => {
           </button>
 
           {/* Profile/Login */}
-          {user ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+          {isLoggedIn ? (
+            <div className="flex items-center space-x-3">
+              {/* Profile Image */}
+              <div className="flex items-center space-x-2">
+                <ProfileImage src={profileImg} alt="프로필" size="md" />
+                <span className="text-sm font-medium text-gray-700">
+                  {nickname || '사용자'}
                 </span>
               </div>
               <button 
                 onClick={logout}
-                className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-800 transition-colors px-3 py-1 rounded-md hover:bg-gray-100"
               >
                 로그아웃
               </button>

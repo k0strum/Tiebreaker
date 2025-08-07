@@ -16,6 +16,8 @@ import com.Tiebreaker.constant.VerificationType;
 import com.Tiebreaker.exception.auth.LoginException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import com.Tiebreaker.service.ImageService;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -26,19 +28,17 @@ public class MemberService {
   private final JwtTokenProvider jwtTokenProvider;
   private final UserDetailsService userDetailsService;
   private final EmailVerificationService emailVerificationService;
+  private final ImageService imageService;
 
   @Transactional
   public MemberResponse join(MemberCreateRequest request) {
-    // 1. 입력값 검증
-    validateJoinRequest(request);
-    
-    // 2. 중복 검사
+    // 1. 중복 검사 (비즈니스 로직)
     validateDuplicateMember(request);
     
-    // 3. 회원 생성 및 저장
+    // 2. 회원 생성 및 저장
     Member member = createAndSaveMember(request);
     
-    // 4. 이메일 인증 토큰 생성 및 발송
+    // 3. 이메일 인증 토큰 생성 및 발송
     emailVerificationService.createVerificationToken(
       member.getEmail(),
       member.getId(),
@@ -46,8 +46,15 @@ public class MemberService {
       member.getNickname()
     );
     
-    // 5. 회원 정보 반환
+    // 4. 회원 정보 반환
     return member.toResponse();
+  }
+
+  @Transactional
+  public MemberResponse join(MemberCreateRequest request, MultipartFile profileImage) {
+    // 기존 오버로드 메서드 유지 (하위 호환성)
+    request.setProfileImage(profileImage);
+    return join(request);
   }
 
   @Transactional(readOnly = true)
@@ -97,33 +104,10 @@ public class MemberService {
     return LoginResponse.builder()
       .token(token)
       .role(member.getRole())
-      .profileImage(member.getProfileImage() != null ? member.getProfileImage() : "")
+      .profileImage(imageService.getProfileImageUrl(member.getProfileImage()))
       .nickname(member.getNickname())
       .memberId(member.getId())
       .build();
-  }
-
-  // 입력값 검증
-  private void validateJoinRequest(MemberCreateRequest request) {
-    if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-      throw new IllegalArgumentException("이메일은 필수입니다.");
-    }
-    if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-      throw new IllegalArgumentException("비밀번호는 필수입니다.");
-    }
-    if (request.getNickname() == null || request.getNickname().trim().isEmpty()) {
-      throw new IllegalArgumentException("닉네임은 필수입니다.");
-    }
-    
-    // 이메일 형식 검증
-    if (!isValidEmail(request.getEmail())) {
-      throw new IllegalArgumentException("올바른 이메일 형식이 아닙니다.");
-    }
-    
-    // 비밀번호 길이 검증
-    if (request.getPassword().length() < 6) {
-      throw new IllegalArgumentException("비밀번호는 6자 이상이어야 합니다.");
-    }
   }
 
   // 중복 검사
@@ -139,22 +123,46 @@ public class MemberService {
     }
   }
 
+
+
   // 회원 생성 및 저장
   private Member createAndSaveMember(MemberCreateRequest request) {
-    // TODO: 이미지 저장 로직 추가 예정
-    String profileImageName = "default.jpg";
+    String profileImageUrl = null;
     
-    // 회원 생성
+    // MultipartFile이 전달된 경우 파일을 다운로드하여 저장
+    if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+      profileImageUrl = imageService.uploadProfileImage(request.getProfileImage());
+    } else if (request.getProfileImageUrl() != null && !request.getProfileImageUrl().trim().isEmpty()) {
+      // URL로 전달된 경우 다운로드하여 저장
+      profileImageUrl = imageService.downloadAndSaveProfileImage(request.getProfileImageUrl());
+    } else {
+      // 프로필 이미지가 없는 경우 기본 이미지 사용
+      profileImageUrl = "/api/members/images/profile-default.svg";
+    }
+    
+    // 회원 생성 (파일명만 저장)
+    String profileImageName = extractFileNameFromUrl(profileImageUrl);
     Member member = Member.from(request, passwordEncoder, profileImageName);
     
     // 회원 저장
     return memberRepository.save(member);
   }
-
-  // 이메일 형식 검증
-  private boolean isValidEmail(String email) {
-    String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-    return email.matches(emailRegex);
+  
+  // URL에서 파일명 추출
+  private String extractFileNameFromUrl(String url) {
+    if (url == null || url.trim().isEmpty()) {
+      return "profile-default.svg";
+    }
+    
+    if (url.startsWith("/api/members/images/profile/")) {
+      return url.replace("/api/members/images/profile/", "");
+    }
+    
+    if (url.equals("/api/members/images/profile-default.svg")) {
+      return "profile-default.svg";
+    }
+    
+    return url;
   }
 
   // 회원 조회 (추가 메서드)
@@ -188,5 +196,35 @@ public class MemberService {
       .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
     
     return member.toResponse();
+  }
+
+  // 프로필 이미지 업데이트 (선택적 기능)
+  @Transactional
+  public String updateProfileImage(String imageUrl) {
+    // SecurityContext에서 현재 인증된 사용자의 이메일을 가져옴
+    String email = org.springframework.security.core.context.SecurityContextHolder
+      .getContext()
+      .getAuthentication()
+      .getName();
+    
+    Member member = memberRepository.findByEmail(email)
+      .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    
+    // 새 프로필 이미지 다운로드 및 저장
+    String newProfileImageUrl = imageService.downloadAndSaveProfileImage(imageUrl);
+    if (newProfileImageUrl == null) {
+      throw new IllegalArgumentException("프로필 이미지 다운로드에 실패했습니다.");
+    }
+    
+    // 파일명만 저장
+    String newProfileImageName = extractFileNameFromUrl(newProfileImageUrl);
+    member.setProfileImage(newProfileImageName);
+    
+    // 회원 정보 저장
+    memberRepository.save(member);
+    
+    System.out.println("프로필 이미지 업데이트 완료: " + newProfileImageName);
+    
+    return newProfileImageUrl;
   }
 }

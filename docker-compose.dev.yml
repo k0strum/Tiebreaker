@@ -3,6 +3,9 @@ services:
   db:
     image: mysql:8.0
     container_name: tiebreak-db-dev
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     ports:
       - "3307:3306"  # 호스트 포트 : 컨테이너 포트
     environment:
@@ -18,6 +21,28 @@ services:
       timeout: 20s
       retries: 10
 
+  # Zookeeper 서비스
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.4
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # Kafka 서비스
+  kafka:
+    image: confluentinc/cp-kafka:7.7.4
+    container_name: kafka
+    ports:
+      - "9092:9092" # 외부에서 Kafka에 접속할 때 사용할 포트
+    depends_on:
+      - zookeeper # Zookeeper가 실행된 후에 Kafka가 실행되도록 설정
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
   # 개발용 API 서버 (Spring Boot DevTools)
   api-server:
     build:
@@ -26,10 +51,16 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./api-server:/app
+      - ./api-server/src:/app/src
+      - ./api-server/pom.xml:/app/pom.xml
       - /app/target # target 폴더는 동기화에서 제외
+      - uploads-data:/app/uploads # 파일 업로드 디렉토리
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+      - JAVA_OPTS=-Dspring.devtools.restart.enabled=true -Dspring.devtools.livereload.enabled=true
+      - JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
     depends_on:
       db:
         condition: service_healthy
@@ -87,3 +118,4 @@ services:
 
 volumes:
   db-data:
+  uploads-data:

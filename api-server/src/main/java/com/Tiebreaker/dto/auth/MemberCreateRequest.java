@@ -7,8 +7,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,4 +34,8 @@ public class MemberCreateRequest {
   private String phone;
   
   private String address;
+  
+  private String profileImageUrl; // 소셜 로그인 시 프로필 이미지 URL
+  
+  private MultipartFile profileImage; // 로컬 회원가입 시 프로필 이미지 파일
 } 

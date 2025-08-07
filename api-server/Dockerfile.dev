@@ -12,4 +12,11 @@ COPY src ./src
 
 # 개발 모드로 실행 (Spring Boot DevTools 사용)
 EXPOSE 8080
-CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=dev"] 
+
+# 개발 환경 최적화
+ENV SPRING_PROFILES_ACTIVE=dev
+ENV SPRING_DEVTOOLS_RESTART_ENABLED=true
+ENV SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+
+# Maven 캐시 최적화 및 실시간 리로드
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=dev", "-Dspring-boot.run.jvmArguments=-Dspring.devtools.restart.enabled=true"] 
