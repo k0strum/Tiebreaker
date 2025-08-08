@@ -123,13 +123,13 @@ function OAuthCallback() {
             <div className="flex flex-col space-y-3">
               <button
                 onClick={() => navigate('/login', { replace: true })}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-black px-6 py-3 rounded-lg transition-colors font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 border border-gray-300"
               >
                 로그인 페이지로 돌아가기
               </button>
               <button
                 onClick={() => navigate('/', { replace: true })}
-                className="w-full bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                className="w-full bg-gray-100 hover:bg-gray-200 text-black px-6 py-3 rounded-lg transition-colors font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 border border-gray-300"
               >
                 홈으로 돌아가기
               </button>

@@ -35,7 +35,7 @@ public class EmailVerification extends BaseTimeEntity {
     private LocalDateTime expiresAt;
     
     @Column(name = "is_verified", nullable = false)
-    private boolean verified = false;
+    private Boolean verified = false;
     
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
@@ -46,6 +46,10 @@ public class EmailVerification extends BaseTimeEntity {
     
     public boolean isValid() {
         return !isExpired() && !this.verified;
+    }
+    
+    public boolean isVerified() {
+        return this.verified != null && this.verified;
     }
     
     public void markAsVerified() {

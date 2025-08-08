@@ -21,7 +21,7 @@ const Header = () => {
       <div className="bg-white px-6 py-3 flex justify-between items-center">
         {/* Left side - Logo and Brand */}
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-pink-500 rounded flex items-center justify-center">
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
             <span className="text-white font-bold text-lg">T</span>
           </div>
           <span className="text-black font-bold text-xl">타이브레이커</span>
@@ -56,7 +56,7 @@ const Header = () => {
           ) : (
             <Link 
               to="/login"
-              className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
+              className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
             >
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -75,8 +75,8 @@ const Header = () => {
               to={item.path}
               className={`text-sm font-bold transition-colors ${
                 location.pathname === item.path
-                  ? 'text-pink-500'
-                  : 'text-gray-800 hover:text-pink-500'
+                  ? 'text-blue-600'
+                  : 'text-gray-800 hover:text-blue-600'
               }`}
             >
               {item.label}

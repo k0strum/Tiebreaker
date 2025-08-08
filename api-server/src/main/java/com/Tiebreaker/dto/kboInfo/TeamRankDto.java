@@ -11,5 +11,12 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TeamRankDto {
     private int rank;
-    private String name;
+    private String teamName;
+    private int plays;
+    private int wins;
+    private int losses;
+    private int draws;
+    private double winRate;
+    private double gameBehind;
+    private String streak;
 }

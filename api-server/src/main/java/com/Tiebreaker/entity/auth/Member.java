@@ -44,7 +44,7 @@ public class Member extends BaseTimeEntity{
   private String profileImage;
 
   @Column(name = "mileage")
-  private int mileage;
+  private Integer mileage;
 
   @Column(name = "login_type")
   private String loginType; // "LOCAL", "KAKAO", "GOOGLE", "NAVER"
@@ -53,11 +53,11 @@ public class Member extends BaseTimeEntity{
   private String socialId; // 소셜 로그인 ID
 
   @Column(name = "email_verified", nullable = false)
-  private boolean emailVerified = false; // 이메일 인증 완료 여부
+  private Boolean emailVerified = false; // 이메일 인증 완료 여부
 
   // 이메일 인증 완료 여부 확인 메서드
   public boolean isEmailVerified() {
-    return this.emailVerified;
+    return this.emailVerified != null && this.emailVerified;
   }
 
   // DTO를 사용한 정적 팩토리 메서드(회원 정보 생성 시 사용)

@@ -69,15 +69,15 @@ const Home = () => {
                   </div>
                 </div>
 
-                {/* 로그아웃 버튼 */}
-                <div className="flex justify-center">
-                  <button 
-                    onClick={logout}
-                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors"
-                  >
-                    로그아웃
-                  </button>
-                </div>
+                                 {/* 로그아웃 버튼 */}
+                 <div className="flex justify-center">
+                   <button 
+                     onClick={logout}
+                     className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-semibold shadow-sm"
+                   >
+                     로그아웃
+                   </button>
+                 </div>
               </div>
             ) : (
               <div className="text-center space-y-4">
@@ -90,13 +90,15 @@ const Home = () => {
                 <div className="flex justify-center space-x-4">
                   <Link 
                     to="/login"
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-bold shadow-sm"
+                    style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
                   >
                     로그인
                   </Link>
                   <Link 
                     to="/signup"
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-bold shadow-sm"
+                    style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
                   >
                     회원가입
                   </Link>
@@ -118,7 +120,7 @@ const Home = () => {
               </p>
               <Link 
                 to="/stats"
-                className="text-blue-500 hover:text-blue-600 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 통계 보기 →
               </Link>
@@ -135,7 +137,7 @@ const Home = () => {
               </p>
               <Link 
                 to="/predictions"
-                className="text-blue-500 hover:text-blue-600 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 예측하기 →
               </Link>
@@ -152,7 +154,7 @@ const Home = () => {
               </p>
               <Link 
                 to="/chat"
-                className="text-blue-500 hover:text-blue-600 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 채팅하기 →
               </Link>
