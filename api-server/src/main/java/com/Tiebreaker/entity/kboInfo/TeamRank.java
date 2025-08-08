@@ -17,9 +17,30 @@ public class TeamRank {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
-  private int teamRank;
+  @Column(name = "team_rank", nullable = false)
+  private Integer rank;
 
   @Column(nullable = false, unique = true)
-  private String name;
+  private String teamName;
+
+  @Column(nullable = false)
+  private Double winRate;
+
+  @Column(nullable = false)
+  private Double gameBehind;
+
+  @Column(nullable = false)
+  private Integer wins;
+
+  @Column(nullable = false)
+  private Integer draws;
+
+  @Column(nullable = false)
+  private Integer losses;
+
+  @Column(nullable = false)
+  private Integer plays;
+
+  @Column(nullable = false)
+  private String streak;
 }

@@ -250,9 +250,9 @@ function Login() {
                 type="button"
                 onClick={() => handleSocialLogin('naver')}
                 disabled={isSocialLoading}
-                className="w-full flex justify-center items-center px-4 py-3 border border-green-500 rounded-lg shadow-sm bg-green-500 text-sm font-semibold text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
-                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="#03C75A">
                   <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z"/>
                 </svg>
                 {isSocialLoading ? '로그인 중...' : '네이버로 로그인'}

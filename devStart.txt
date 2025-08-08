@@ -199,3 +199,6 @@ docker system prune -f
 1. MySQL 서비스 중지 확인
 2. 포트 3307 사용 중인지 확인
 3. 사용자 인증 정보 확인
+
+### 컨테이너 안에서 직접 해결해야 할 때
+docker exec -it tiebreak-db-dev /bin/bash
