@@ -1,5 +1,8 @@
 package com.Tiebreaker.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -24,4 +27,5 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/api/members/images/default/**")
                 .addResourceLocations("classpath:/static/images/default/");
     }
+
 }

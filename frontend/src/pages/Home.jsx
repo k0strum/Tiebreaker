@@ -1,16 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 import ProfileImage from '../components/ProfileImage';
+import axios from '../utils/axios';
 
 const Home = () => {
   const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, loginType, logout } = useAuth();
+  const [teamRanks, setTeamRanks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 팀 순위 데이터 가져오기
+  const fetchTeamRanks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get('/info/current/teamRank');
+      setTeamRanks(response.data);
+    } catch (err) {
+      console.error('팀 순위 데이터 가져오기 실패:', err);
+      setError('팀 순위 데이터를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeamRanks();
+  }, []);
+
+  // 승률 계산 (소수점 3자리까지)
+  const formatWinRate = (winRate) => {
+    return winRate.toFixed(3);
+  };
+
+  // 연속 기록 포맷팅 (String 값으로 받아오므로 그대로 사용)
+  const formatStreak = (streak) => {
+    if (!streak) return '-';
+    return streak; // 이미 '2승', '1패' 등의 형태로 받아오므로 그대로 반환
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 메인 컨텐츠 */}
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* 환영 메시지 */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -103,6 +137,109 @@ const Home = () => {
                     회원가입
                   </Link>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* KBO 팀 순위 표 */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                🏟️ KBO 팀 순위
+              </h2>
+              <button 
+                onClick={fetchTeamRanks}
+                disabled={loading}
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium"
+              >
+                {loading ? '새로고침 중...' : '새로고침'}
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                {error}
+              </div>
+            )}
+
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p className="mt-2 text-gray-600">팀 순위를 불러오는 중...</p>
+              </div>
+            ) : teamRanks.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">순위</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">팀</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">경기</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">승</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">무</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">패</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">승률</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">게임차</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">연속</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamRanks.map((team, index) => (
+                      <tr 
+                        key={team.teamName} 
+                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ${
+                          index < 5 ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-4 font-semibold text-gray-900">
+                          {team.rank}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-3">
+                            {team.teamLogoUrl && (
+                              <img 
+                                src={team.teamLogoUrl} 
+                                alt={`${team.teamName} 로고`}
+                                className="w-8 h-8 object-contain"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <span className="font-medium text-gray-900">{team.teamName}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center text-gray-700">{team.plays}</td>
+                        <td className="py-3 px-4 text-center text-green-600 font-semibold">{team.wins}</td>
+                        <td className="py-3 px-4 text-center text-gray-600">{team.draws}</td>
+                        <td className="py-3 px-4 text-center text-red-600 font-semibold">{team.losses}</td>
+                        <td className="py-3 px-4 text-center font-semibold text-gray-900">
+                          {formatWinRate(team.winRate)}
+                        </td>
+                        <td className="py-3 px-4 text-center text-gray-700">
+                          {team.gameBehind === 0 ? '-' : team.gameBehind}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            team.streak && team.streak.includes('승')
+                              ? 'bg-green-100 text-green-800' 
+                              : team.streak && team.streak.includes('패')
+                                ? 'bg-red-100 text-red-800' 
+                                : team.streak && team.streak.includes('무')
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {formatStreak(team.streak)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                팀 순위 데이터가 없습니다.
               </div>
             )}
           </div>
