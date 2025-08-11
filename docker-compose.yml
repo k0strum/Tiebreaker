@@ -32,8 +32,11 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
   # 메인 API 서버 (Spring Boot)
   api-server:
@@ -46,6 +49,7 @@ services:
       - uploads-data:/app/uploads # 파일 업로드 디렉토리
     depends_on:
       - db
+      - kafka
 
   # 데이터 수집 서버 (Python Flask)
   data-collector:
@@ -54,6 +58,9 @@ services:
       - "5001:5000" # 내 PC 5001 -> 컨테이너 5000
     volumes:
       - ./data-collector:/app
+    depends_on:
+      - kafka
+    restart: unless-stopped
 
   # 프론트엔드 서버 (React + Nginx)
   frontend:

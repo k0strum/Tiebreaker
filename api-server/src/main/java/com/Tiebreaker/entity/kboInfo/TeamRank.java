@@ -1,5 +1,7 @@
 package com.Tiebreaker.entity.kboInfo;
 
+import com.Tiebreaker.entity.BaseTimeEntity;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +13,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeamRank {
+public class TeamRank extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,10 +26,7 @@ public class TeamRank {
   private String teamName;
 
   @Column(nullable = false)
-  private Double winRate;
-
-  @Column(nullable = false)
-  private Double gameBehind;
+  private Integer plays;
 
   @Column(nullable = false)
   private Integer wins;
@@ -39,8 +38,14 @@ public class TeamRank {
   private Integer losses;
 
   @Column(nullable = false)
-  private Integer plays;
+  private Double winRate;
+
+  @Column(nullable = false)
+  private Double gameBehind;
 
   @Column(nullable = false)
   private String streak;
+
+  @Column(name = "team_logo_url", length = 500)
+  private String teamLogoUrl;
 }

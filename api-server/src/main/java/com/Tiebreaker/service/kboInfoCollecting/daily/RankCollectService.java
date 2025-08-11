@@ -1,7 +1,6 @@
-package com.Tiebreaker.service.kboInfo;
+package com.Tiebreaker.service.kboInfoCollecting.daily;
 
 import com.Tiebreaker.dto.kboInfo.KboRankDto;
-import com.Tiebreaker.dto.kboInfo.TeamRankDto;
 import com.Tiebreaker.repository.TeamRankRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,7 +9,7 @@ import com.Tiebreaker.entity.kboInfo.TeamRank;
 
 @Service
 @RequiredArgsConstructor
-public class RankService {
+public class RankCollectService {
 
   private final TeamRankRepository teamRankRepository;
 
@@ -19,7 +18,7 @@ public class RankService {
     // DTO 리스트 하나씩 순회
     kboRankDto.getData().forEach(teamDto -> {
       // DB에서 해당 팀 이름으로 기존 데이터를 찾아옴
-      TeamRank teamRank = teamRankRepository.findByName(teamDto.getTeamName());
+      TeamRank teamRank = teamRankRepository.findByTeamName(teamDto.getTeamName());
 
       if (teamRank == null) {
         // 기존 데이터가 없으면 새로운 Entity 생성

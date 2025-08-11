@@ -10,13 +10,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamRankDto {
-    private int rank;
+    private Integer rank;
     private String teamName;
-    private int plays;
-    private int wins;
-    private int losses;
-    private int draws;
-    private double winRate;
-    private double gameBehind;
+    private Integer plays;
+    private Integer wins;
+    private Integer losses;
+    private Integer draws;
+    private Double winRate;
+    private Double gameBehind;
     private String streak;
 }
