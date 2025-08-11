@@ -64,6 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldNotFilter(String requestURI) {
         return requestURI.equals("/api/members/join") || 
                requestURI.equals("/api/members/login") ||
+               requestURI.equals("/api/info/current/teamRank") || // 팀 순위 조회 - 인증 불필요
                requestURI.startsWith("/actuator/") ||
                requestURI.equals("/") ||
                requestURI.startsWith("/css/") ||

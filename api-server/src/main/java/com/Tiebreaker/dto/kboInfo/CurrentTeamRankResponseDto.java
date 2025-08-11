@@ -21,7 +21,7 @@ public class CurrentTeamRankResponseDto {
     private int wins;
     private int losses;
     private int draws;
-    private double winRate;
-    private double gameBehind;
+    private Double winRate;
+    private Double gameBehind;
     private String streak;
 }

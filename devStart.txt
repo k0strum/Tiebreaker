@@ -202,3 +202,6 @@ docker system prune -f
 
 ### 컨테이너 안에서 직접 해결해야 할 때
 docker exec -it tiebreak-db-dev /bin/bash
+
+### db 직접 확인
+mysql -u user -p tiebreak_db
