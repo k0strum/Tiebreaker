@@ -1,19 +1,38 @@
 from flask import Flask, jsonify
 import requests
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import time
 import json
 from kafka import KafkaProducer
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Flask 애플리케이션 인스턴스 생성  
 app = Flask(__name__)
 
-# Kafka Producer 인스턴스 생성
-# value_serializer는 메시지 값을 JSON 형태로 직렬화하고 UTF-8로 인코딩합니다.
-producer = KafkaProducer(
-    bootstrap_servers=['kafka:9092'], # docker-compose에 정의된 kafka 서비스 이름 사용
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# --- [수정] Kafka Producer 생성 부분에 재시도 로직 추가 ---
+producer = None
+retries = 10 # 10번 재시도
+while retries > 0:
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=['kafka:9092'],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            api_version=(0, 10, 2) # 특정 버전을 명시하여 호환성 문제 방지
+        )
+        logging.info("Kafka Producer에 성공적으로 연결되었습니다.")
+        break  # 성공 시 루프 탈출
+    except Exception as e:
+        retries -= 1
+        logging.error(f"Kafka 연결 실패. 5초 후 {retries}번 더 재시도합니다... 오류: {e}")
+        time.sleep(5) # 5초 대기 후 재시도
+
+if producer is None:
+    logging.critical("Kafka Producer에 최종적으로 연결하지 못했습니다. 스케줄러를 시작할 수 없습니다.")
+    # 이 경우, 앱이 정상 동작할 수 없음을 의미합니다.
 
 # 1. 실제 데이터 수집을 담당할 함수
 def collect_kbo_data():
@@ -66,6 +85,17 @@ def collect_kbo_data():
         print(f"크롤링 중 오류 발생: {e}")
         return {"error": str(e)}
 
+def schedule_collection():
+    print("Data schedule collection start")
+    collected_data = collect_kbo_data()
+    
+    if collected_data.get('status') == 'success':
+        producer.send('kbo-rank-data', value=collected_data)
+        producer.flush()
+        print(f"Schedule job sent to Kafka")
+    else:
+        print(f"Failed to collect data: {collected_data.get('error')}")
+
 # kafka 메시지 전송
 @app.route('/api/collect')
 def trigger_collection():
@@ -94,6 +124,21 @@ def home():
 def health():
     return jsonify({"status": "ok"})
 
-# 이 파일이 직접 실행될 때만 Flask 서버 실행
-if __name__ == '__main__':  
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# producer가 성공적으로 연결되었을 때만 스케줄러를 실행
+if producer:
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(schedule_collection, 'interval', minutes=60)
+    scheduler.start()
+    logging.info("APScheduler가 시작되었습니다. 2분 간격으로 작업을 실행합니다.")
+    
+    # 앱 종료 시 스케줄러도 함께 종료되도록 설정
+    atexit.register(lambda: scheduler.shutdown())
+else:
+    logging.critical("Kafka에 연결되지 않아 스케줄러를 시작할 수 없습니다.")
+
+
+# 이 파일이 "직접" python app.py로 실행될 때만 Flask 개발 서버를 구동합니다.
+# Docker에서 flask run으로 실행될 때는 이 부분이 실행되지 않고,
+# 대신 Dockerfile의 CMD 명령어가 Flask 서버를 실행합니다.
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)

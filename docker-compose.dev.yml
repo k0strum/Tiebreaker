@@ -79,7 +79,9 @@ services:
       - ./data-collector:/app
     environment:
       - FLASK_ENV=development
-      - FLASK_DEBUG=1
+      - FLASK_DEBUG=0
+    depends_on:
+      - kafka
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
