@@ -3,14 +3,12 @@ import random
 import json
 import requests
 from bs4 import BeautifulSoup
-# import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from config import get_config, is_docker, is_local
-
 from selenium.common.exceptions import TimeoutException
+from utils.config import get_config
 
 PLAYER_INFO_MAP = {
     '생년월일': 'birthday',
@@ -120,6 +118,12 @@ PITCHER_CALCULATED_STATS = {
 }
 
 def scrape_all_players_and_details():
+    """
+    모든 선수의 상세 정보를 수집하는 제너레이터 함수
+    
+    Yields:
+        dict: 선수 정보 딕셔너리
+    """
     print("[DEBUG] scrape_all_players_and_details 함수에 진입했습니다.")
     config = get_config()
     options = webdriver.ChromeOptions()
@@ -149,7 +153,7 @@ def scrape_all_players_and_details():
 
     try:
         # team_codes = ['LG', 'OB', 'HH', 'HT', 'SS', 'KT', 'SK', 'LT', 'NC', 'WO']
-        team_codes = ['HT']
+        team_codes = ['LT']
         search_url = "https://www.koreabaseball.com/Player/Search.aspx"
         wait = WebDriverWait(driver, 20)
         
@@ -205,12 +209,78 @@ def scrape_all_players_and_details():
 
                         all_links = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".tEx tbody tr > td:nth-child(2) > a")))
                         
+                        if i >= len(all_links):
+                            print(f"    [경고] {i+1}번째 선수 링크를 찾을 수 없습니다. 페이지를 건너뜁니다.")
+                            break
+                        
                         player_to_click = all_links[i]
                         player_name = player_to_click.text.strip()
-                        print(f"  ({i+1}/{num_players_on_page}) {player_name} 선수 정보 수집 시도...")
-                        driver.execute_script("arguments[0].click();", player_to_click)
                         
-                        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "player_basic")))
+                        if not player_name:
+                            print(f"    [경고] {i+1}번째 선수 이름이 비어있습니다. 건너뜁니다.")
+                            continue
+                            
+                        print(f"  ({i+1}/{num_players_on_page}) {player_name} 선수 정보 수집 시도...")
+                        
+                        # 선수 링크 클릭 시도
+                        try:
+                            # 먼저 클릭 가능한 상태인지 확인
+                            wait.until(EC.element_to_be_clickable(player_to_click))
+                            driver.execute_script("arguments[0].click();", player_to_click)
+                        except Exception as click_error:
+                            print(f"    [경고] {player_name} 선수 링크 클릭 실패: {click_error}")
+                            # 기본 정보만 포함한 데이터 반환
+                            player_data = {
+                                'id': None, 
+                                'playerName': player_name, 
+                                'teamName': team_name,
+                                'batterStats': None,
+                                'batterCalculatedStats': None,
+                                'pitcherStats': None,
+                                'pitcherCalculatedStats': None
+                            }
+                            yield player_data
+                            continue
+                        
+                        # 선수 상세 페이지 로딩 대기 (타임아웃 처리 추가)
+                        try:
+                            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "player_basic")))
+                        except TimeoutException:
+                            print(f"    [경고] {player_name} 선수 상세 페이지 로딩 타임아웃. 검색 페이지로 돌아갑니다.")
+                            # 현재 URL 확인
+                            current_url = driver.current_url
+                            if "Search.aspx" in current_url:
+                                print(f"    [확인] 여전히 검색 페이지에 있습니다: {current_url}")
+                                # 기본 정보만 포함한 데이터 반환
+                                player_data = {
+                                    'id': None, 
+                                    'playerName': player_name, 
+                                    'teamName': team_name,
+                                    'batterStats': None,
+                                    'batterCalculatedStats': None,
+                                    'pitcherStats': None,
+                                    'pitcherCalculatedStats': None
+                                }
+                                yield player_data
+                                continue
+                            else:
+                                # 다른 페이지로 이동했다면 다시 시도
+                                print(f"    [재시도] 다른 페이지로 이동했습니다: {current_url}")
+                                try:
+                                    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "player_basic")))
+                                except TimeoutException:
+                                    print(f"    [최종 실패] {player_name} 선수 페이지 로딩 실패")
+                                    player_data = {
+                                        'id': None, 
+                                        'playerName': player_name, 
+                                        'teamName': team_name,
+                                        'batterStats': None,
+                                        'batterCalculatedStats': None,
+                                        'pitcherStats': None,
+                                        'pitcherCalculatedStats': None
+                                    }
+                                    yield player_data
+                                    continue
                         
                         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -383,14 +453,3 @@ def scrape_all_players_and_details():
         if 'driver' in locals() and driver:
             driver.quit()
         print("\n모든 선수 정보 수집 완료.")
-
-# ... (run_player_loading_task 함수와 if __name__ == '__main__' 부분은 동일) ...
-def run_player_loading_task():
-    all_players = scrape_all_players_and_details()
-    # 수집된 데이터를 JSON 파일로 저장 (결과 확인용)
-    with open('kbo_players.json', 'w', encoding='utf-8') as f:
-        json.dump(all_players, f, ensure_ascii=False, indent=4)
-    print("\n수집된 데이터가 kbo_players.json 파일로 저장되었습니다.")
-
-if __name__ == '__main__':
-    run_player_loading_task()

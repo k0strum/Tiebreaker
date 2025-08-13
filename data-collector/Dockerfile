@@ -9,9 +9,9 @@ ENV PYTHONUNBUFFERED 1
 # 3. 시스템 패키지 업데이트 및 Chrome 실행에 필요한 모든 의존성 라이브러리 설치
 RUN apt-get update && apt-get install -y \
   wget \
-  unzip \
   gnupg \
   ca-certificates \
+  unzip \
   # --- [개선] 한글 및 CJK 폰트 깨짐 방지 ---
   fonts-noto-cjk \
   # --- Chrome 필수 라이브러리 (중복 제거 및 정리) ---
@@ -47,19 +47,13 @@ RUN apt-get update && apt-get install -y \
   xdg-utils \
   && rm -rf /var/lib/apt/lists/*
 
-# 4. Chrome 및 ChromeDriver 설치 (기존 로컬 ZIP 사용 방식 유지)
-COPY third_party/chrome-linux64.zip /tmp/chrome-linux64.zip
-COPY third_party/chromedriver-linux64.zip /tmp/chromedriver-linux64.zip
-
-RUN unzip /tmp/chrome-linux64.zip -d /opt/ \
-  && mv /opt/chrome-linux64 /opt/google-chrome \
-  && ln -s /opt/google-chrome/chrome /usr/bin/google-chrome \
-  && rm /tmp/chrome-linux64.zip
-
-RUN unzip /tmp/chromedriver-linux64.zip -d /tmp/ \
-  && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/ \
-  && chmod +x /usr/local/bin/chromedriver \
-  && rm -rf /tmp/chromedriver-linux64.zip /tmp/chromedriver-linux64
+# 4. Google Chrome 설치 (Selenium Manager로 드라이버 자동 관리)
+RUN mkdir -p /usr/share/keyrings \
+  && wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+  && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+  && apt-get update \
+  && apt-get install -y google-chrome-stable \
+  && rm -rf /var/lib/apt/lists/*
 
 # 5. [개선] 비-루트(Non-Root) 사용자 생성
 RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin -c "Application User" appuser
