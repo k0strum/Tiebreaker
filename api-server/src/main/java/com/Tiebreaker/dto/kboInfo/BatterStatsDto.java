@@ -5,15 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * 타자의 원본 스탯 정보 DTO
- */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class BatterStatsDto {
 
+  private Integer games;
   // 타석, 타수
   private Integer plateAppearances;
   private Integer atBats;
@@ -27,17 +25,18 @@ public class BatterStatsDto {
   private Integer runsBattedIn;
   private Integer runs;
   // 볼넷, 사구, 고의사구
-  private Integer baseOnBalls;
+  private Integer walks;
   private Integer hitByPitch;
-  private Integer intentionalBasesOnBalls;
+  private Integer intentionalWalks;
   // 삼진, 병살타, 실책
-  private Integer strikeOuts;
-  private Integer groundIntoDoublePlay;
+  private Integer strikeouts;
+  private Integer groundedIntoDoublePlay;
   private Integer errors;
   // 도루, 도루실패
   private Integer stolenBases;
   private Integer caughtStealing;
   // 희생번트, 희생플라이
-  private Integer sacrifices;
+  private Integer sacrificeHits;
   private Integer sacrificeFlies;
 }
+

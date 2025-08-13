@@ -203,5 +203,20 @@ docker system prune -f
 ### 컨테이너 안에서 직접 해결해야 할 때
 docker exec -it tiebreak-db-dev /bin/bash
 
-### db 직접 확인
-mysql -u user -p tiebreak_db
+### db 직접 확인 (한글 지원)
+# 방법 1: 기본 UTF-8 설정
+mysql -u user -p tiebreak_db --default-character-set=utf8mb4
+
+# 방법 2: 더 상세한 인코딩 설정
+mysql -u user -p tiebreak_db --default-character-set=utf8mb4 --init-command="SET NAMES utf8mb4"
+
+# 방법 3: 환경변수와 함께 사용
+LANG=ko_KR.UTF-8 mysql -u user -p tiebreak_db --default-character-set=utf8mb4
+use tiebreak_db
+
+# MySQL 접속 후 한글 설정 (필요시)
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_client = utf8mb4;
+SET character_set_connection = utf8mb4;
+SET character_set_results = utf8mb4;

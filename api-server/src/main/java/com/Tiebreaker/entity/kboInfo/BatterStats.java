@@ -21,33 +21,32 @@ public class BatterStats {
   @JoinColumn(name = "player_id")
   private Player player;
 
-  // 타석
+  private Integer games;
+  // 타석, 타수
   private Integer plateAppearances;
-  // 타수
   private Integer atBats;
   // 안타 / 2루타 / 3루타 / 홈런
   private Integer hits;
   private Integer doubles;
   private Integer triples;
   private Integer homeRuns;
-  // 총 루타
+  // 총 루타, 타점, 득점
   private Integer totalBases;
-  // 타점 / 득점
   private Integer runsBattedIn;
   private Integer runs;
   // 볼넷 / 사구 / 고의사구
-  private Integer baseOnBalls;
+  private Integer walks;
   private Integer hitByPitch;
-  private Integer intentionalBasesOnBalls;
+  private Integer intentionalWalks;
   // 삼진 / 병살타 / 실책
-  private Integer strikeOuts;
-  private Integer groundIntoDoublePlay;
+  private Integer strikeouts;
+  private Integer groundedIntoDoublePlay;
   private Integer errors;
   // 도루 / 도루실패
   private Integer stolenBases;
   private Integer caughtStealing;
   // 희생번트 / 희생플라이
-  private Integer sacrifices;
+  private Integer sacrificeHits;
   private Integer sacrificeFlies;
 }
 

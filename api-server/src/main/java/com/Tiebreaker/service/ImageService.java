@@ -26,10 +26,13 @@ public class ImageService {
     @Value("${app.upload.profile-image.location}")
     private String profileImgLocation;
 
+    @Value("${app.upload.player-image.location}")
+    private String playerImgLocation;
+
     /**
      * MultipartFile을 서버에 업로드하고 웹 경로를 반환합니다.
      * @param multipartFile 업로드할 이미지 파일
-     * @param locationType "profile" 또는 "item" 등 저장할 위치 타입
+     * @param locationType "profile", "player" 등 저장할 위치 타입
      * @return 웹에서 접근 가능한 이미지 URL 경로
      * @throws Exception
      */
@@ -44,6 +47,8 @@ public class ImageService {
         // locationType에 따라 다른 웹 경로를 반환합니다.
         if ("profile".equals(locationType)) {
             return "/api/members/images/profile/" + savedFileName;
+        } else if ("player".equals(locationType)) {
+            return "/api/players/images/" + savedFileName;
         }
         return null;
     }
@@ -51,7 +56,7 @@ public class ImageService {
     /**
      * URL로부터 이미지를 다운로드하여 서버에 저장하고 웹 경로를 반환합니다.
      * @param imageUrl 다운로드할 이미지의 전체 URL
-     * @param locationType "profile" 또는 "item" 등 저장할 위치 타입
+     * @param locationType "profile", "player" 등 저장할 위치 타입
      * @return 웹에서 접근 가능한 이미지 URL 경로
      */
     public String downloadAndSaveImage(String imageUrl, String locationType) {
@@ -77,6 +82,8 @@ public class ImageService {
 
             if ("profile".equals(locationType)) {
                 return "/api/members/images/profile/" + savedFileName;
+            } else if ("player".equals(locationType)) {
+                return "/api/players/images/" + savedFileName;
             }
             return null;
 
@@ -94,6 +101,13 @@ public class ImageService {
     }
 
     /**
+     * 선수 프로필 이미지 전용 다운로드 메서드
+     */
+    public String downloadAndSavePlayerImage(String imageUrl) {
+        return downloadAndSaveImage(imageUrl, "player");
+    }
+
+    /**
      * MultipartFile을 프로필 이미지로 업로드하는 메서드
      */
     public String uploadProfileImage(MultipartFile multipartFile) {
@@ -106,12 +120,26 @@ public class ImageService {
     }
 
     /**
+     * MultipartFile을 선수 프로필 이미지로 업로드하는 메서드
+     */
+    public String uploadPlayerImage(MultipartFile multipartFile) {
+        try {
+            return uploadFile(multipartFile, "player");
+        } catch (Exception e) {
+            log.error("선수 프로필 이미지 업로드 실패", e);
+            return null;
+        }
+    }
+
+    /**
      * 실제 파일을 저장하고, 고유한 파일명을 반환하는 핵심 로직
      */
     private String saveFile(String originalFileName, byte[] fileData, String locationType) throws Exception {
         String uploadPath;
         if ("profile".equals(locationType)) {
             uploadPath = profileImgLocation;
+        } else if ("player".equals(locationType)) {
+            uploadPath = playerImgLocation;
         } else {
             throw new IllegalArgumentException("Invalid location type: " + locationType);
         }
@@ -154,6 +182,8 @@ public class ImageService {
             String uploadPath;
             if ("profile".equals(locationType)) {
                 uploadPath = profileImgLocation;
+            } else if ("player".equals(locationType)) {
+                uploadPath = playerImgLocation;
             } else {
                 throw new IllegalArgumentException("Invalid location type: " + locationType);
             }
@@ -179,6 +209,13 @@ public class ImageService {
     }
 
     /**
+     * 선수 프로필 이미지 전용 리소스 로드 메서드
+     */
+    public Resource loadPlayerImageAsResource(String fileName) {
+        return loadImageAsResource(fileName, "player");
+    }
+
+    /**
      * 파일 삭제 로직
      */
     public void deleteFile(String filePath, String locationType) throws Exception {
@@ -191,6 +228,13 @@ public class ImageService {
             if (filePath.startsWith("/api/members/images/profile/")) {
                 fileName = filePath.replace("/api/members/images/profile/", "");
                 uploadPath = profileImgLocation;
+            } else {
+                return;
+            }
+        } else if ("player".equals(locationType)) {
+            if (filePath.startsWith("/api/players/images/")) {
+                fileName = filePath.replace("/api/players/images/", "");
+                uploadPath = playerImgLocation;
             } else {
                 return;
             }
@@ -224,5 +268,23 @@ public class ImageService {
         }
         
         return "/api/members/images/profile/" + fileName;
+    }
+
+    /**
+     * 선수 프로필 이미지 URL을 생성합니다.
+     * @param fileName 파일명
+     * @return 완전한 이미지 URL
+     */
+    public String getPlayerImageUrl(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return "/api/players/images/player-default.svg";
+        }
+        
+        // 기본 이미지인 경우
+        if ("player-default.svg".equals(fileName)) {
+            return "/api/players/images/player-default.svg";
+        }
+        
+        return "/api/players/images/" + fileName;
     }
 }

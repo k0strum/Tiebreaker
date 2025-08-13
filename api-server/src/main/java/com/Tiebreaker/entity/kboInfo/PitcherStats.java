@@ -21,31 +21,37 @@ public class PitcherStats {
   @JoinColumn(name = "player_id")
   private Player player;
 
+  private Integer games;
   // 승리 / 패배 / 세이브 / 블론세이브 / 홀드
-  private Integer win;
-  private Integer lose;
-  private Integer save;
-  private Integer blownSave;
-  private Integer hold;
-  // 완투 / 완볼
-  private Integer completeGame;
-  private Integer shutout;
-  // 상대 타자 수
-  private Integer batterFaced;
-  // 투구 수
-  private Integer pitchCount;
-  // 이닝
-  private Integer innings;
+  private Integer wins;
+  private Integer losses;
+  private Integer saves;
+  private Integer blownSaves;
+  private Integer holds;
+  // 완투 / 완봉
+  private Integer completeGames;
+  private Integer shutouts;
+  // 상대 타자 수, 투구 수, 이닝
+  private Integer totalBattersFaced;
+  private Integer numberOfPitches;
+  private Double inningsPitched;
   // 허용 안타 / 2루타 / 3루타 / 홈런
-  private Integer hits;
-  private Integer doubles;
-  private Integer triples;
-  private Integer homeRuns;
-  // 사구 / 실점 / 자책점
-  private Integer baseOnBalls;
-  private Integer runs;
+  private Integer hitsAllowed;
+  private Integer doublesAllowed;
+  private Integer triplesAllowed;
+  private Integer homeRunsAllowed;
+  // 고의사구, 볼넷, 실점, 자책점
+  private Integer intentionalWalksAllowed;
+  private Integer walksAllowed;
+  private Integer runsAllowed;
   private Integer earnedRuns;
-  // 삼진 / 퀄리티스타트
-  private Integer strikeOut;
-  private Integer qualityStart;
+  // 폭투, 보크
+  private Integer wildPitches;
+  private Integer balks;
+  // 허용 희생번트, 희생플라이
+  private Integer sacrificeHitsAllowed;
+  private Integer sacrificeFliesAllowed;
+  // 삼진, 퀄리티스타트
+  private Integer strikeouts;
+  private Integer qualityStarts;
 }

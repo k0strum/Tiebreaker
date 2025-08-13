@@ -126,10 +126,14 @@ def health():
 
 # producer가 성공적으로 연결되었을 때만 스케줄러를 실행
 if producer:
+    logging.info("첫 번째 데이터 수집 시작")
+    schedule_collection()
+    logging.info("첫 번째 데이터 수집 완료")
+
     scheduler = BackgroundScheduler()
     scheduler.add_job(schedule_collection, 'interval', minutes=60)
     scheduler.start()
-    logging.info("APScheduler가 시작되었습니다. 2분 간격으로 작업을 실행합니다.")
+    logging.info("APScheduler가 시작되었습니다. 1시간 간격으로 작업을 실행합니다.")
     
     # 앱 종료 시 스케줄러도 함께 종료되도록 설정
     atexit.register(lambda: scheduler.shutdown())
