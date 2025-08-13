@@ -3,7 +3,7 @@ package com.Tiebreaker.service.kboinfo;
 import com.Tiebreaker.constant.TeamLogoConstants;
 import com.Tiebreaker.dto.kboInfo.CurrentTeamRankResponseDto;
 import com.Tiebreaker.entity.kboInfo.TeamRank;
-import com.Tiebreaker.repository.TeamRankRepository;
+import com.Tiebreaker.repository.kboInfo.TeamRankRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

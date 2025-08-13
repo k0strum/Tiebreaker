@@ -1,7 +1,7 @@
 package com.Tiebreaker.service.kboInfoCollecting.daily;
 
 import com.Tiebreaker.dto.kboInfo.KboRankDto;
-import com.Tiebreaker.repository.TeamRankRepository;
+import com.Tiebreaker.repository.kboInfo.TeamRankRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

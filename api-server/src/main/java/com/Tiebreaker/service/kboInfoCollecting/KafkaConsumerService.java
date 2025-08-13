@@ -1,7 +1,9 @@
 package com.Tiebreaker.service.kboInfoCollecting;
 
 import com.Tiebreaker.dto.kboInfo.KboRankDto;
+import com.Tiebreaker.dto.kboInfo.PlayerDto;
 import com.Tiebreaker.service.kboInfoCollecting.daily.RankCollectService;
+import com.Tiebreaker.service.kboInfoCollecting.daily.PlayerDataService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,16 +17,33 @@ public class KafkaConsumerService {
 
   private final ObjectMapper objectMapper;
   private final RankCollectService rankCollectService;
+  private final PlayerDataService playerDataService;
 
   @KafkaListener(topics = "kbo-rank-data", groupId = "tiebreak-group")
-  public void consume(String message) {
+  public void consumeRankData(String message) {
     try {
       KboRankDto kboRankDto = objectMapper.readValue(message, KboRankDto.class);
 
       // DB 저장을 위해 RankService의 메서드 호출
       rankCollectService.updateRanks(kboRankDto);
     } catch (JsonProcessingException e) {
-      System.err.println("Error parsing JSON String: " + e);
+      System.err.println("Error parsing - Team Rank JSON String: " + e);
+    }
+  }
+
+  @KafkaListener(topics = "kbo-player-data", groupId = "tiebreak-group")
+  public void consumePlayerData(String message) {
+    try {
+      PlayerDto playerDto = objectMapper.readValue(message, PlayerDto.class);
+
+      // DB 저장을 위해 PlayerDataService의 메서드 호출
+      playerDataService.savePlayerData(playerDto);
+      
+      System.out.println("✅ 선수 데이터 저장 완료: " + playerDto.getPlayerName() + " (ID: " + playerDto.getId() + ")");
+    } catch (JsonProcessingException e) {
+      System.err.println("❌ Error parsing - Player JSON String: " + e.getMessage());
+    } catch (Exception e) {
+      System.err.println("❌ Error saving player data: " + e.getMessage());
     }
   }
 
