@@ -40,56 +40,52 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/images/**", "/profile/**", "/uploads/**",
-                    "/api/members/join", // 회원가입
-                    "/api/members/login", // 로그인
-                    "/api/members/images/**", // 프로필 이미지 서빙
-                    "/api/info/current/teamRank", // 팀 순위 조회
-                    "/api/email/verify",
-                    "/api/oauth/**", // OAuth 관련 API
-                    "/oauth2/authorization/**", // 소셜 로그인 시작
-                    "/login/oauth2/code/**", // 소셜 로그인 콜백
-                    "/ws/**", "/sockjs-node/**", "/static/**", "/*.html" // WebSocket, 정적리소스
-                ).permitAll()
-                .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(
-                new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService), 
-                UsernamePasswordAuthenticationFilter.class
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(customAuthenticationSuccessHandler)
-                .failureHandler(customAuthenticationFailureHandler)
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService)
-                )
-            )
-            .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/api/members/logout"))
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-            )
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    String uri = request.getRequestURI();
-                    if (uri.startsWith("/api/")) {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.getWriter().write("{\"message\":\"인증이 필요합니다.\"}");
-                    } else {
-                        // 웹 페이지 요청의 경우 프론트엔드로 리다이렉트
-                        response.sendRedirect("http://localhost:5173/login");
-                    }
-                })
-            );
-        
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/images/**", "/profile/**",
+                                "/uploads/**",
+                                "/api/members/join", // 회원가입
+                                "/api/members/login", // 로그인
+                                "/api/members/images/**", // 프로필 이미지 서빙
+                                "/api/email/verify",
+                                "/api/oauth/**", // OAuth 관련 API
+                                "/oauth2/authorization/**", // 소셜 로그인 시작
+                                "/login/oauth2/code/**", // 소셜 로그인 콜백
+                                "/api/info/current/teamRank", // 팀 순위 조회
+                                "/api/rankings/**", // 선수 순위 조회
+                                "/ws/**", "/sockjs-node/**", "/static/**", "/*.html" // WebSocket, 정적리소스
+                        ).permitAll()
+                        .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
+                        UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(customAuthenticationSuccessHandler)
+                        .failureHandler(customAuthenticationFailureHandler)
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)))
+                .logout(logout -> logout
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/api/members/logout"))
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String uri = request.getRequestURI();
+                            if (uri.startsWith("/api/")) {
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"message\":\"인증이 필요합니다.\"}");
+                            } else {
+                                // 웹 페이지 요청의 경우 프론트엔드로 리다이렉트
+                                response.sendRedirect("http://localhost:5173/login");
+                            }
+                        }));
+
         return http.build();
     }
 

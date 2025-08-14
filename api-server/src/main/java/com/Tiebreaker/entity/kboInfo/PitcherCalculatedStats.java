@@ -17,7 +17,7 @@ public class PitcherCalculatedStats {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "player_id")
   private Player player;
 

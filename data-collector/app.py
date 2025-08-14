@@ -90,22 +90,6 @@ def initialize_schedulers_once():
     except Exception as e:
         logging.error(f"스케줄러 초기화 중 오류 발생: {e}")
 
-# 프로세스 ID를 기반으로 한 번만 실행되도록 보장
-import os
-def initialize_schedulers_with_pid_check():
-    """프로세스 ID를 기반으로 스케줄러를 한 번만 초기화합니다."""
-    global _schedulers_initialized
-    
-    # 메인 프로세스에서만 스케줄러 초기화 (Gunicorn worker 중 첫 번째만)
-    if os.environ.get('GUNICORN_CMD_ARGS') and '--worker-class' in os.environ.get('GUNICORN_CMD_ARGS', ''):
-        # Gunicorn worker 프로세스인 경우, 첫 번째 워커에서만 실행
-        worker_id = int(os.environ.get('GUNICORN_WORKER_ID', '0'))
-        if worker_id != 0:
-            logging.info(f"Worker {worker_id}에서는 스케줄러를 초기화하지 않습니다.")
-            return
-    
-    initialize_schedulers_once()
-
 # 앱 종료 시 스케줄러 정리
 def cleanup_schedulers():
     global team_rank_scheduler, player_scheduler
@@ -118,11 +102,9 @@ def cleanup_schedulers():
 
 atexit.register(cleanup_schedulers)
 
-# 이 파일이 "직접" python app.py로 실행될 때만 Flask 개발 서버를 구동합니다.
+# Flask 개발 서버 실행
 if __name__ == '__main__':
-    # 개발 모드에서는 즉시 스케줄러 초기화
+    # 스케줄러 초기화
     initialize_schedulers_once()
+    # Flask 서버 시작
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-else:
-    # gunicorn으로 실행될 때는 프로세스 ID를 확인하여 한 번만 초기화
-    initialize_schedulers_with_pid_check()

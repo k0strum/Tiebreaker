@@ -17,7 +17,7 @@ public class BatterStats {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "player_id")
   private Player player;
 
@@ -49,4 +49,3 @@ public class BatterStats {
   private Integer sacrificeHits;
   private Integer sacrificeFlies;
 }
-

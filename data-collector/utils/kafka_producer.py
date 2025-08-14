@@ -3,7 +3,7 @@ import json
 import logging
 from kafka import KafkaProducer
 
-def create_kafka_producer(bootstrap_servers=['kafka:9092'], max_retries=10):
+def create_kafka_producer(bootstrap_servers=['localhost:9092'], max_retries=10):
     """
     Kafka Producer를 생성하고 연결을 시도합니다.
     

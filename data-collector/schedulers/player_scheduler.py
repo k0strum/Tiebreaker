@@ -30,8 +30,8 @@ def schedule_player_collection():
     # 스케줄러 생성
     scheduler = BackgroundScheduler()
     
-    # 하루에 한 번 실행 (매일 자정)
-    scheduler.add_job(collect_and_send, 'cron', hour=0, minute=0, id='player_collection')
+    # 하루에 한 번 실행 (매일 오후 5시)
+    scheduler.add_job(collect_and_send, 'cron', hour=17, minute=0, id='player_collection')
     
     # 즉시 첫 번째 실행
     collect_and_send()

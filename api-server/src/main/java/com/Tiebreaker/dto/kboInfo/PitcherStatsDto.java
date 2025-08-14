@@ -27,7 +27,7 @@ public class PitcherStatsDto {
   // 상대 타자 수, 투구 수, 이닝
   private Integer totalBattersFaced;
   private Integer numberOfPitches;
-  private Double inningsPitched; // 1/3, 2/3 이닝이 있으므로 Double 타입이 더 적합
+  private String inningsPitched; // "23 2/3", "120", "1/3" 등의 형태로 저장
   // 허용 안타, 2루타, 3루타, 홈런
   private Integer hitsAllowed;
   private Integer doublesAllowed;

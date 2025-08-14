@@ -31,8 +31,9 @@ public class ImageService {
 
     /**
      * MultipartFile을 서버에 업로드하고 웹 경로를 반환합니다.
+     * 
      * @param multipartFile 업로드할 이미지 파일
-     * @param locationType "profile", "player" 등 저장할 위치 타입
+     * @param locationType  "profile", "player" 등 저장할 위치 타입
      * @return 웹에서 접근 가능한 이미지 URL 경로
      * @throws Exception
      */
@@ -55,14 +56,19 @@ public class ImageService {
 
     /**
      * URL로부터 이미지를 다운로드하여 서버에 저장하고 웹 경로를 반환합니다.
-     * @param imageUrl 다운로드할 이미지의 전체 URL
+     * 
+     * @param imageUrl     다운로드할 이미지의 전체 URL
      * @param locationType "profile", "player" 등 저장할 위치 타입
      * @return 웹에서 접근 가능한 이미지 URL 경로
      */
     public String downloadAndSaveImage(String imageUrl, String locationType) {
         if (!StringUtils.hasText(imageUrl)) {
+            log.warn("이미지 URL이 비어있습니다.");
             return null; // URL이 비어있으면 null 반환
         }
+
+        log.info("이미지 다운로드 시작: URL={}, LocationType={}", imageUrl, locationType);
+
         try (InputStream in = new URL(imageUrl).openStream()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -72,18 +78,27 @@ public class ImageService {
             }
             byte[] fileData = out.toByteArray();
 
+            log.info("이미지 다운로드 완료: 크기={} bytes", fileData.length);
+
             // 파일 이름은 URL에서 마지막 부분을 사용하거나, 없으면 UUID로 생성
             String fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
             if (!StringUtils.hasText(fileName) || fileName.length() > 100) { // 너무 길거나 이름이 없는 경우
                 fileName = UUID.randomUUID().toString() + ".jpg";
             }
 
+            log.info("파일명 생성: {}", fileName);
+
             String savedFileName = saveFile(fileName, fileData, locationType);
+            log.info("파일 저장 완료: {}", savedFileName);
 
             if ("profile".equals(locationType)) {
-                return "/api/members/images/profile/" + savedFileName;
+                String webPath = "/api/members/images/profile/" + savedFileName;
+                log.info("프로필 이미지 웹 경로: {}", webPath);
+                return webPath;
             } else if ("player".equals(locationType)) {
-                return "/api/players/images/" + savedFileName;
+                String webPath = "/api/players/images/" + savedFileName;
+                log.info("선수 이미지 웹 경로: {}", webPath);
+                return webPath;
             }
             return null;
 
@@ -144,6 +159,8 @@ public class ImageService {
             throw new IllegalArgumentException("Invalid location type: " + locationType);
         }
 
+        log.info("파일 저장 경로: {}", uploadPath);
+
         UUID uuid = UUID.randomUUID();
 
         String extension;
@@ -160,15 +177,22 @@ public class ImageService {
         String savedFileName = uuid.toString() + extension;
         String fileUploadFullUrl = uploadPath + savedFileName;
 
+        log.info("저장할 파일 경로: {}", fileUploadFullUrl);
+
         // 폴더가 없으면 생성
         File uploadDir = new File(uploadPath);
         if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+            boolean created = uploadDir.mkdirs();
+            log.info("디렉토리 생성: {} - {}", uploadPath, created ? "성공" : "실패");
         }
 
         // 파일 저장
         try (FileOutputStream fos = new FileOutputStream(fileUploadFullUrl)) {
             fos.write(fileData);
+            log.info("파일 저장 성공: {}", savedFileName);
+        } catch (Exception e) {
+            log.error("파일 저장 실패: {}", fileUploadFullUrl, e);
+            throw e;
         }
 
         return savedFileName; // 저장된 파일의 이름(UUID.확장자) 반환
@@ -190,7 +214,7 @@ public class ImageService {
 
             Path filePath = Paths.get(uploadPath).resolve(fileName);
             Resource resource = new UrlResource(filePath.toUri());
-            
+
             if (resource.exists()) {
                 return resource;
             } else {
@@ -219,7 +243,8 @@ public class ImageService {
      * 파일 삭제 로직
      */
     public void deleteFile(String filePath, String locationType) throws Exception {
-        if (!StringUtils.hasText(filePath)) return;
+        if (!StringUtils.hasText(filePath))
+            return;
 
         String fileName;
         String uploadPath;
@@ -254,6 +279,7 @@ public class ImageService {
 
     /**
      * 프로필 이미지 URL을 생성합니다.
+     * 
      * @param fileName 파일명
      * @return 완전한 이미지 URL
      */
@@ -261,17 +287,18 @@ public class ImageService {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "/api/members/images/profile-default.svg";
         }
-        
+
         // 기본 이미지인 경우
         if ("profile-default.svg".equals(fileName)) {
             return "/api/members/images/profile-default.svg";
         }
-        
+
         return "/api/members/images/profile/" + fileName;
     }
 
     /**
      * 선수 프로필 이미지 URL을 생성합니다.
+     * 
      * @param fileName 파일명
      * @return 완전한 이미지 URL
      */
@@ -279,12 +306,12 @@ public class ImageService {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "/api/players/images/player-default.svg";
         }
-        
+
         // 기본 이미지인 경우
         if ("player-default.svg".equals(fileName)) {
             return "/api/players/images/player-default.svg";
         }
-        
+
         return "/api/players/images/" + fileName;
     }
 }

@@ -1,0 +1,11 @@
+cd C:\Kafka\kafka_2.13-3.9.1
+
+# Zookeeper 실행
+bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+
+# 새 창에서 Kafka 실행
+bin\windows\kafka-server-start.bat config\server.properties
+
+# 새 창에서 토픽 생성 (카프카 첫 구동 시 실행)
+bin\windows\kafka-topics.bat --create --topic kbo-player-data --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+bin\windows\kafka-topics.bat --create --topic kbo-team-rank-data --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
