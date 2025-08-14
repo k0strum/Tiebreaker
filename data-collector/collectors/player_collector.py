@@ -22,15 +22,15 @@ PLAYER_INFO_MAP = {
 # 팀 코드와 팀명 매핑
 TEAM_CODE_TO_NAME = {
     'LG': 'LG',
-    'OB': 'DOOSAN',
-    'HH': 'HANHWA',
+    'OB': '두산',
+    'HH': '한화',
     'HT': 'KIA',
-    'SS': 'SAMSUNG',
+    'SS': '삼성',
     'KT': 'KT',
     'SK': 'SSG',
-    'LT': 'LOTTE',
+    'LT': '롯데',
     'NC': 'NC',
-    'WO': 'KIWOOM'
+    'WO': '키움'
 }
 
 # 타자 순수 스탯 (DTO와 매칭)
@@ -129,7 +129,7 @@ def scrape_all_players_and_details():
     options = webdriver.ChromeOptions()
 
     # --- 옵션 설정 ---
-    if config['headless']:
+    if config['webdriver']['headless']:
         options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -153,7 +153,7 @@ def scrape_all_players_and_details():
 
     try:
         # team_codes = ['LG', 'OB', 'HH', 'HT', 'SS', 'KT', 'SK', 'LT', 'NC', 'WO']
-        team_codes = ['LT']
+        team_codes = ['SK', 'WO']
         search_url = "https://www.koreabaseball.com/Player/Search.aspx"
         wait = WebDriverWait(driver, 20)
         
@@ -234,6 +234,7 @@ def scrape_all_players_and_details():
                                 'id': None, 
                                 'playerName': player_name, 
                                 'teamName': team_name,
+                                'imageUrl': None,
                                 'batterStats': None,
                                 'batterCalculatedStats': None,
                                 'pitcherStats': None,
@@ -256,6 +257,7 @@ def scrape_all_players_and_details():
                                     'id': None, 
                                     'playerName': player_name, 
                                     'teamName': team_name,
+                                    'imageUrl': None,
                                     'batterStats': None,
                                     'batterCalculatedStats': None,
                                     'pitcherStats': None,
@@ -274,6 +276,7 @@ def scrape_all_players_and_details():
                                         'id': None, 
                                         'playerName': player_name, 
                                         'teamName': team_name,
+                                        'imageUrl': None,
                                         'batterStats': None,
                                         'batterCalculatedStats': None,
                                         'pitcherStats': None,
@@ -284,6 +287,8 @@ def scrape_all_players_and_details():
                         
                         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
+                        # 이미지 URL 수집
+                        image_url = None
                         try:
                             # 'player_basic' 클래스 내부의 img 태그를 찾습니다.
                             img_tag = soup.select_one('.player_basic .photo img')
@@ -292,9 +297,12 @@ def scrape_all_players_and_details():
                                 # URL이 //로 시작하는 경우 https:를 붙여줍니다.
                                 if image_url.startswith('//'):
                                     image_url = 'https:' + image_url
-                        except Exception:
-                            print(f"    [경고] {player_name} 선수의 이미지 URL을 찾을 수 없습니다.")
-                            pass
+                                print(f"    [정보] {player_name} 선수 이미지 URL 수집: {image_url}")
+                            else:
+                                print(f"    [경고] {player_name} 선수의 이미지 태그를 찾을 수 없습니다.")
+                        except Exception as e:
+                            print(f"    [경고] {player_name} 선수의 이미지 URL을 찾을 수 없습니다: {e}")
+                            image_url = None
 
                         # 1. Selenium으로 현재 페이지의 URL을 직접 가져옵니다.
                         current_url = driver.current_url
@@ -309,7 +317,12 @@ def scrape_all_players_and_details():
                                 print(f"  [경고] {player_name} 선수의 URL에서 ID를 파싱할 수 없습니다.")
                                 pass
 
-                        player_data = {'id': player_id, 'playerName': player_name, 'teamName': team_name}
+                        player_data = {
+                            'id': player_id, 
+                            'playerName': player_name, 
+                            'teamName': team_name,
+                            'imageUrl': image_url
+                        }
 
                         info_list_items = soup.select('.player_info li')
                         for item in info_list_items:
@@ -387,7 +400,10 @@ def scrape_all_players_and_details():
                                     if header in PITCHER_BASE_STATS:
                                         key = PITCHER_BASE_STATS[header]
                                         try:
-                                            if '.' in value:
+                                            # 이닝은 문자열로 그대로 저장 (파싱은 백엔드에서 처리)
+                                            if key == 'inningsPitched':
+                                                base_stats_dict[key] = value
+                                            elif '.' in value:
                                                 base_stats_dict[key] = float(value)
                                             else:
                                                 base_stats_dict[key] = int(value)

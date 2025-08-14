@@ -15,7 +15,7 @@ def schedule_team_rank_collection():
             if collected_data.get('status') == 'success':
                 producer = create_kafka_producer()
                 if producer:
-                    producer.send('kbo-rank-data', value=collected_data)
+                    producer.send('kbo-team-rank-data', value=collected_data)
                     producer.flush()
                     logging.info("팀 랭킹 데이터가 Kafka로 전송되었습니다.")
                     producer.close()

@@ -16,10 +16,21 @@ const Home = () => {
       setLoading(true);
       setError(null);
       const response = await axios.get('/info/current/teamRank');
-      setTeamRanks(response.data);
+      console.log('API 응답:', response.data); // 디버깅용
+      
+      // 응답이 배열인지 확인하고 안전하게 설정
+      if (Array.isArray(response.data)) {
+        setTeamRanks(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        setTeamRanks(response.data.data);
+      } else {
+        console.warn('예상하지 못한 응답 형태:', response.data);
+        setTeamRanks([]);
+      }
     } catch (err) {
       console.error('팀 순위 데이터 가져오기 실패:', err);
       setError('팀 순위 데이터를 불러오는데 실패했습니다.');
+      setTeamRanks([]);
     } finally {
       setLoading(false);
     }
@@ -167,7 +178,7 @@ const Home = () => {
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <p className="mt-2 text-gray-600">팀 순위를 불러오는 중...</p>
               </div>
-            ) : teamRanks.length > 0 ? (
+            ) : Array.isArray(teamRanks) && teamRanks.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>

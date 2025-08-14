@@ -5,7 +5,7 @@ from utils.kafka_producer import create_kafka_producer
 # Blueprint 생성
 team_rank_bp = Blueprint('team_rank', __name__)
 
-@team_rank_bp.route('/api/collect/team-rank', methods=['POST'])
+@team_rank_bp.route('/api/collect/team-rank', methods=['POST', 'GET'])
 def trigger_team_rank_collection():
     """
     팀 랭킹 데이터 수집을 수동으로 트리거합니다.
