@@ -75,5 +75,5 @@ USER appuser
 
 # 8. [개선] Gunicorn으로 애플리케이션 실행
 # app:app -> app.py 파일 안의 app = Flask(__name__) 변수를 의미합니다.
-# workers: 동시에 처리할 수 있는 프로세스 수 (CPU 코어 수에 맞춰 조절)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+# workers: 동시에 처리할 수 있는 프로세스 수 (스케줄러 중복 실행 방지를 위해 1로 설정)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "app:app"]
