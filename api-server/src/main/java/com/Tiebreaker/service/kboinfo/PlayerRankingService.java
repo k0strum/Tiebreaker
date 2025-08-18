@@ -2,13 +2,9 @@ package com.Tiebreaker.service.kboinfo;
 
 import com.Tiebreaker.dto.kboInfo.PlayerRankingDto;
 import com.Tiebreaker.entity.kboInfo.BatterStats;
-import com.Tiebreaker.entity.kboInfo.BatterCalculatedStats;
 import com.Tiebreaker.entity.kboInfo.PitcherStats;
-import com.Tiebreaker.entity.kboInfo.PitcherCalculatedStats;
 import com.Tiebreaker.repository.kboInfo.BatterStatsRepository;
-import com.Tiebreaker.repository.kboInfo.BatterCalculatedStatsRepository;
 import com.Tiebreaker.repository.kboInfo.PitcherStatsRepository;
-import com.Tiebreaker.repository.kboInfo.PitcherCalculatedStatsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,9 +23,7 @@ import java.util.stream.IntStream;
 public class PlayerRankingService {
 
   private final BatterStatsRepository batterStatsRepository;
-  private final BatterCalculatedStatsRepository batterCalculatedStatsRepository;
   private final PitcherStatsRepository pitcherStatsRepository;
-  private final PitcherCalculatedStatsRepository pitcherCalculatedStatsRepository;
   private final TeamGameService teamGameService;
 
   /**
@@ -37,8 +31,8 @@ public class PlayerRankingService {
    */
   @Transactional(readOnly = true)
   public List<PlayerRankingDto> getBattingAverageRanking() {
-    // 모든 타자 계산 통계 조회
-    List<BatterCalculatedStats> allStats = batterCalculatedStatsRepository.findBattingAverageRanking();
+    // 모든 타자 통계 조회 (통합된 BatterStats 사용)
+    List<BatterStats> allStats = batterStatsRepository.findBattingAverageRanking();
 
     // 팀별 규정타석 기준 가져오기
     Map<String, Integer> teamPlateAppearancesCriteria = teamGameService.getAllBatterPlateAppearances();
@@ -46,16 +40,11 @@ public class PlayerRankingService {
     // 규정타석 이상인 선수들만 필터링
     List<PlayerRankingDto> rankings = new ArrayList<>();
 
-    for (BatterCalculatedStats stat : allStats) {
+    for (BatterStats stat : allStats) {
       String teamName = stat.getPlayer().getTeamName();
       Integer minPlateAppearances = teamPlateAppearancesCriteria.get(teamName);
 
-      // null 체크 추가
-      if (stat.getPlayer().getBatterStats() == null) {
-        continue;
-      }
-
-      Integer playerPlateAppearances = stat.getPlayer().getBatterStats().getPlateAppearances();
+      Integer playerPlateAppearances = stat.getPlateAppearances();
 
       if (playerPlateAppearances == null) {
         continue;
@@ -136,8 +125,8 @@ public class PlayerRankingService {
    */
   @Transactional(readOnly = true)
   public List<PlayerRankingDto> getOnBasePercentageRanking() {
-    // 모든 타자 계산 통계 조회
-    List<BatterCalculatedStats> allStats = batterCalculatedStatsRepository.findOnBasePercentageRanking();
+    // 모든 타자 통계 조회 (통합된 BatterStats 사용)
+    List<BatterStats> allStats = batterStatsRepository.findOnBasePercentageRanking();
 
     // 팀별 규정타석 기준 가져오기
     Map<String, Integer> teamPlateAppearancesCriteria = teamGameService.getAllBatterPlateAppearances();
@@ -145,16 +134,11 @@ public class PlayerRankingService {
     // 규정타석 이상인 선수들만 필터링
     List<PlayerRankingDto> rankings = new ArrayList<>();
 
-    for (BatterCalculatedStats stat : allStats) {
+    for (BatterStats stat : allStats) {
       String teamName = stat.getPlayer().getTeamName();
       Integer minPlateAppearances = teamPlateAppearancesCriteria.get(teamName);
 
-      // null 체크 추가
-      if (stat.getPlayer().getBatterStats() == null) {
-        continue;
-      }
-
-      Integer playerPlateAppearances = stat.getPlayer().getBatterStats().getPlateAppearances();
+      Integer playerPlateAppearances = stat.getPlateAppearances();
 
       if (playerPlateAppearances == null) {
         continue;
@@ -189,8 +173,8 @@ public class PlayerRankingService {
    */
   @Transactional(readOnly = true)
   public List<PlayerRankingDto> getOpsRanking() {
-    // 모든 타자 계산 통계 조회
-    List<BatterCalculatedStats> allStats = batterCalculatedStatsRepository.findOpsRanking();
+    // 모든 타자 통계 조회 (통합된 BatterStats 사용)
+    List<BatterStats> allStats = batterStatsRepository.findOpsRanking();
 
     // 팀별 규정타석 기준 가져오기
     Map<String, Integer> teamPlateAppearancesCriteria = teamGameService.getAllBatterPlateAppearances();
@@ -198,16 +182,11 @@ public class PlayerRankingService {
     // 규정타석 이상인 선수들만 필터링
     List<PlayerRankingDto> rankings = new ArrayList<>();
 
-    for (BatterCalculatedStats stat : allStats) {
+    for (BatterStats stat : allStats) {
       String teamName = stat.getPlayer().getTeamName();
       Integer minPlateAppearances = teamPlateAppearancesCriteria.get(teamName);
 
-      // null 체크 추가
-      if (stat.getPlayer().getBatterStats() == null) {
-        continue;
-      }
-
-      Integer playerPlateAppearances = stat.getPlayer().getBatterStats().getPlateAppearances();
+      Integer playerPlateAppearances = stat.getPlateAppearances();
 
       if (playerPlateAppearances == null) {
         continue;
@@ -357,8 +336,8 @@ public class PlayerRankingService {
    */
   @Transactional(readOnly = true)
   public List<PlayerRankingDto> getEraRanking() {
-    // 모든 투수 계산 통계 조회
-    List<PitcherCalculatedStats> allStats = pitcherCalculatedStatsRepository.findEraRanking();
+    // 모든 투수 통계 조회 (통합된 PitcherStats 사용)
+    List<PitcherStats> allStats = pitcherStatsRepository.findEraRanking();
 
     // 팀별 규정이닝 기준 가져오기
     Map<String, Double> teamInningsCriteria = teamGameService.getAllPitcherInnings();
@@ -366,19 +345,12 @@ public class PlayerRankingService {
     // 규정이닝 이상인 선수들만 필터링
     List<PlayerRankingDto> rankings = new ArrayList<>();
 
-    for (PitcherCalculatedStats stat : allStats) {
+    for (PitcherStats stat : allStats) {
       String teamName = stat.getPlayer().getTeamName();
       Double minInnings = teamInningsCriteria.get(teamName);
 
-      // 직접 PitcherStats 조회
-      Optional<PitcherStats> pitcherStatsOpt = pitcherStatsRepository.findByPlayerId(stat.getPlayer().getId());
-
-      if (pitcherStatsOpt.isEmpty()) {
-        continue;
-      }
-
-      PitcherStats pitcherStats = pitcherStatsOpt.get();
-      Double playerInnings = pitcherStats.getInningsPitched();
+      // 이닝을 Double로 변환
+      Double playerInnings = stat.getInningsPitchedInteger() + (stat.getInningsPitchedFraction() * (1.0 / 3.0));
 
       if (playerInnings == null || playerInnings == 0.0) {
         continue;
@@ -412,8 +384,8 @@ public class PlayerRankingService {
    */
   @Transactional(readOnly = true)
   public List<PlayerRankingDto> getWhipRanking() {
-    // 모든 투수 계산 통계 조회
-    List<PitcherCalculatedStats> allStats = pitcherCalculatedStatsRepository.findWhipRanking();
+    // 모든 투수 통계 조회 (통합된 PitcherStats 사용)
+    List<PitcherStats> allStats = pitcherStatsRepository.findWhipRanking();
 
     // 팀별 규정이닝 기준 가져오기
     Map<String, Double> teamInningsCriteria = teamGameService.getAllPitcherInnings();
@@ -421,19 +393,12 @@ public class PlayerRankingService {
     // 규정이닝 이상인 선수들만 필터링
     List<PlayerRankingDto> rankings = new ArrayList<>();
 
-    for (PitcherCalculatedStats stat : allStats) {
+    for (PitcherStats stat : allStats) {
       String teamName = stat.getPlayer().getTeamName();
       Double minInnings = teamInningsCriteria.get(teamName);
 
-      // 직접 PitcherStats 조회
-      Optional<PitcherStats> pitcherStatsOpt = pitcherStatsRepository.findByPlayerId(stat.getPlayer().getId());
-
-      if (pitcherStatsOpt.isEmpty()) {
-        continue;
-      }
-
-      PitcherStats pitcherStats = pitcherStatsOpt.get();
-      Double playerInnings = pitcherStats.getInningsPitched();
+      // 이닝을 Double로 변환
+      Double playerInnings = stat.getInningsPitchedInteger() + (stat.getInningsPitchedFraction() * (1.0 / 3.0));
 
       if (playerInnings == null || playerInnings == 0.0) {
         continue;

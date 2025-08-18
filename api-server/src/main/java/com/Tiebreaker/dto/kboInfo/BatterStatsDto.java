@@ -11,6 +11,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BatterStatsDto {
 
+  // 연도 정보 (기본값: 현재 연도)
+  private Integer year;
+
+  // === 기본 기록 ===
   private Integer games;
   // 타석, 타수
   private Integer plateAppearances;
@@ -38,5 +42,20 @@ public class BatterStatsDto {
   // 희생번트, 희생플라이
   private Integer sacrificeHits;
   private Integer sacrificeFlies;
-}
 
+  // === 계산된 기록 ===
+  // 타율
+  private Double battingAverage;
+  // 장타율
+  private Double sluggingPercentage;
+  // 출루율
+  private Double onBasePercentage;
+  // 도루 성공률
+  private Double stolenBasePercentage;
+  // OPS
+  private Double ops;
+  // 득점권 타율
+  private Double battingAverageWithRunnersInScoringPosition;
+  // 대타 타율
+  private Double pinchHitBattingAverage;
+}

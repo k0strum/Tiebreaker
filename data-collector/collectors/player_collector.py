@@ -9,6 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from utils.config import get_config
+from datetime import datetime
+from typing import Optional, List, Dict, Tuple
 
 PLAYER_INFO_MAP = {
     '생년월일': 'birthday',
@@ -117,6 +119,370 @@ PITCHER_CALCULATED_STATS = {
     'AVG': 'battingAverageAgainst'   # 피안타율
 }
 
+# === 월간 타자 합계 파싱 유틸 ===
+HEADER_TO_FIELD_MONTHLY = {
+    'PA': 'plateAppearances',
+    'AB': 'atBats',
+    'R': 'runs',
+    'H': 'hits',
+    '2B': 'doubles',
+    '3B': 'triples',
+    'HR': 'homeRuns',
+    'RBI': 'runsBattedIn',
+    'SB': 'stolenBases',
+    'CS': 'caughtStealing',
+    'BB': 'walks',
+    'HBP': 'hitByPitch',
+    'SO': 'strikeouts',
+    'GDP': 'groundedIntoDoublePlay',
+}
+
+def _to_int_safe(v: str) -> int:
+    if v is None:
+        return 0
+    v = v.strip()
+    if v in ('', '-', '–'):
+        return 0
+    try:
+        return int(v)
+    except ValueError:
+        try:
+            return int(float(v))
+        except Exception:
+            return 0
+
+def _extract_month_from_thead(table_el) -> Optional[int]:
+    ths = table_el.select('thead th')
+    if not ths:
+        return None
+    t = ths[0].get_text(strip=True).replace(' ', '')
+    if t.endswith('월'):
+        try:
+            return int(t[:-1])
+        except Exception:
+            return None
+    return None
+
+def _select_monthly_divs_by_header(soup: BeautifulSoup) -> List:
+    """player_records 내 월간 표(div.tbl-type02.tbl-type02-pd0)만 동적으로 선별.
+    thead 첫 번째 th 텍스트가 'N월'인 경우만 채택 (월 수 변동 대응)
+    """
+    pr = soup.select_one('#contents > div.sub-content > div.player_records')
+    if not pr:
+        # 폴백: 어디에 있든 첫 번째 player_records 사용
+        pr = soup.find('div', class_='player_records')
+        if not pr:
+            return []
+    # 직계 자식만 안전하게 탐색
+    children = pr.find_all('div', recursive=False)
+    results = []
+    for div in children:
+        classes = div.get('class', [])
+        if 'tbl-type02' not in classes or 'tbl-type02-pd0' not in classes:
+            continue
+        table = div.select_one('table.tbl.tt')
+        if not table:
+            continue
+        ths = table.select('thead th')
+        if not ths:
+            continue
+        h0 = ths[0].get_text(strip=True).replace(' ', '')
+        if h0.endswith('월'):
+            results.append(div)
+    return results
+
+def _parse_batter_monthly_total_from_div(month_div, year: Optional[int]) -> Optional[dict]:
+    table = month_div.select_one('table.tbl.tt')
+    if not table:
+        return None
+
+    month_num = _extract_month_from_thead(table)
+    if not month_num:
+        return None
+
+    total_row = table.select_one('tfoot.play_record tr')
+    if not total_row:
+        return None
+
+    total_cells = [c.get_text(strip=True) for c in total_row.select('th, td')]
+    headers = [th.get_text(strip=True) for th in table.select('thead th')]
+
+    # headers: [월, 상대, AVG1, PA, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, HBP, SO, GDP, AVG2]
+    # totals : [합계(2칸), AVG1, PA, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, HBP, SO, GDP, AVG2]
+    core_headers = headers[2:]
+    core_totals = total_cells[1:]
+    if len(core_totals) < len(core_headers):
+        core_headers = core_headers[:len(core_totals)]
+
+    header_to_total = dict(zip(core_headers, core_totals))
+
+    stats = {
+        'year': year,
+        'month': month_num,
+        # 요청: 헤더/풋터 제외 tbody 행 개수를 그대로 게임수로 사용
+        'games': len(table.select('tbody tr')),
+        'plateAppearances': _to_int_safe(header_to_total.get('PA', '0')),
+        'atBats': _to_int_safe(header_to_total.get('AB', '0')),
+        'hits': _to_int_safe(header_to_total.get('H', '0')),
+        'doubles': _to_int_safe(header_to_total.get('2B', '0')),
+        'triples': _to_int_safe(header_to_total.get('3B', '0')),
+        'homeRuns': _to_int_safe(header_to_total.get('HR', '0')),
+        'runsBattedIn': _to_int_safe(header_to_total.get('RBI', '0')),
+        'runs': _to_int_safe(header_to_total.get('R', '0')),
+        'walks': _to_int_safe(header_to_total.get('BB', '0')),
+        'hitByPitch': _to_int_safe(header_to_total.get('HBP', '0')),
+        'strikeouts': _to_int_safe(header_to_total.get('SO', '0')),
+        'stolenBases': _to_int_safe(header_to_total.get('SB', '0')),
+        'caughtStealing': _to_int_safe(header_to_total.get('CS', '0')),
+        'groundedIntoDoublePlay': _to_int_safe(header_to_total.get('GDP', '0')),
+    }
+    try:
+        print(f"    [월간-타자] {month_num}월: 경기수 {stats['games']}")
+    except Exception:
+        pass
+    return stats
+
+def parse_batter_monthly_totals_for_season(soup: BeautifulSoup, year: Optional[int]) -> List[dict]:
+    month_divs = _select_monthly_divs_by_header(soup)
+    results = []
+    for div in month_divs:
+        data = _parse_batter_monthly_total_from_div(div, year=year)
+        if data:
+            results.append(data)
+    results.sort(key=lambda x: x['month'])
+    return results
+
+# === 월간 투수 합계 파싱 유틸 ===
+def _parse_ip_to_parts(ip_text: str) -> Tuple[int, int]:
+    """IP 문자열을 정수, 분수(0/1/2)로 분해. 예: '5.2' -> (5, 2). '-', '' -> (0, 0)"""
+    if not ip_text:
+        return 0, 0
+    t = ip_text.strip()
+    if t in ('-', '–'):
+        return 0, 0
+    try:
+        if '.' in t:
+            whole, frac = t.split('.', 1)
+            whole_int = int(whole) if whole else 0
+            frac_int = int(frac[:1]) if frac else 0
+            # 안전장치: 0/1/2 외 값은 0 처리
+            if frac_int not in (0, 1, 2):
+                frac_int = 0
+            return whole_int, frac_int
+        else:
+            return int(t), 0
+    except Exception:
+        return 0, 0
+
+def _is_pitcher_monthly_table(table_el) -> bool:
+    headers = [th.get_text(strip=True) for th in table_el.select('thead th')]
+    if not headers:
+        return False
+    # Pitcher monthly key headers
+    needed = {'TBF', 'IP', 'ER', 'SO', 'ERA1'}
+    return needed.issubset(set(h.replace(' ', '') for h in headers))
+
+def _parse_pitcher_monthly_total_from_div(month_div, year: Optional[int]) -> Optional[dict]:
+    table = month_div.select_one('table.tbl.tt')
+    if not table or not _is_pitcher_monthly_table(table):
+        return None
+
+    month_num = _extract_month_from_thead(table)
+    if not month_num:
+        return None
+
+    total_row = table.select_one('tfoot.play_record tr')
+    if not total_row:
+        return None
+
+    total_cells = [c.get_text(strip=True) for c in total_row.select('th, td')]
+    headers = [th.get_text(strip=True) for th in table.select('thead th')]
+
+    # headers: [월, 상대, 구분, 결과, ERA1, TBF, IP, H, HR, BB, HBP, SO, R, ER, ERA2]
+    # totals : [합계(3~4칸), ERA1, TBF, IP, H, HR, BB, HBP, SO, R, ER, ERA2] (구분/결과는 없음)
+    # -> headers에서 ERA1 이후의 핵심 지표들을 totals 대비로 매핑
+    # ERA1은 계산 지표라 저장 안 함. 순수 카운트 + IP, SO, R, ER 등만 처리
+    # core_headers를 ERA1 포함으로 잡고, core_totals는 합계 셀 다음부터
+    # 합계 셀 개수는 사이트 구조 변화 가능성 있으므로 값 정렬로 보정
+    # 간단 접근: 헤더에서 ERA1의 인덱스를 찾고, 그 이후 헤더들과 totals 마지막 길이를 맞춰 zip
+    try:
+        era1_idx = headers.index('ERA1')
+    except ValueError:
+        # 헤더 이름에 공백/줄바꿈이 섞일 수 있어 대체 탐색
+        normalized = [h.replace(' ', '') for h in headers]
+        era1_idx = normalized.index('ERA1') if 'ERA1' in normalized else -1
+    if era1_idx == -1:
+        return None
+
+    core_headers = headers[era1_idx:]  # ERA1부터 끝까지
+    # totals의 앞쪽 합계/병합 셀(구분,결과 등)은 무시하고 뒤에서 core_headers 길이에 맞춰 슬라이싱
+    # 다만 core_headers에는 ERA2 같은 계산 지표도 포함되므로 이후 필터링
+    if len(total_cells) >= len(core_headers):
+        core_totals = total_cells[-len(core_headers):]
+    else:
+        # 길이가 짧으면 앞쪽 합계 셀을 하나 덜 무시하고 다시 맞춤
+        core_totals = total_cells[1:]
+        if len(core_totals) < len(core_headers):
+            core_headers = core_headers[:len(core_totals)]
+
+    header_to_total = dict(zip(core_headers, core_totals))
+
+    ip_text = header_to_total.get('IP') or header_to_total.get('이닝') or '0'
+    ip_i, ip_f = _parse_ip_to_parts(ip_text)
+
+    stats = {
+        'year': year,
+        'month': month_num,
+        'games': len(table.select('tbody tr')),
+        'inningsPitchedInteger': ip_i,
+        'inningsPitchedFraction': ip_f,
+        'strikeouts': _to_int_safe(header_to_total.get('SO', '0')),
+        'runsAllowed': _to_int_safe(header_to_total.get('R', '0')),
+        'earnedRuns': _to_int_safe(header_to_total.get('ER', '0')),
+        'hitsAllowed': _to_int_safe(header_to_total.get('H', '0')),
+        'homeRunsAllowed': _to_int_safe(header_to_total.get('HR', '0')),
+        'totalBattersFaced': _to_int_safe(header_to_total.get('TBF', '0')),
+        'walksAllowed': _to_int_safe(header_to_total.get('BB', '0')),
+        'hitByPitch': _to_int_safe(header_to_total.get('HBP', '0')),
+        # 승패/세이브/홀드는 월간 표에 없으면 0
+        'wins': 0,
+        'losses': 0,
+        'saves': 0,
+        'holds': 0,
+    }
+    try:
+        print(f"    [월간-투수] {month_num}월: 경기수 {stats['games']}")
+    except Exception:
+        pass
+    return stats
+
+def parse_pitcher_monthly_totals_for_season(soup: BeautifulSoup, year: Optional[int]) -> List[dict]:
+    month_divs = _select_monthly_divs_by_header(soup)
+    results = []
+    for div in month_divs:
+        data = _parse_pitcher_monthly_total_from_div(div, year=year)
+        if data:
+            results.append(data)
+    results.sort(key=lambda x: x['month'])
+    return results
+
+# === Daily(일자별기록) 탭으로 이동해 soup 확보 ===
+def _activate_pitcher_tab(driver, wait) -> bool:
+    try:
+        # 상위 탭(타자/투수) 중 '투수'가 표시/활성된 앵커를 찾아 클릭
+        target = None
+        try:
+            candidates = driver.find_elements(By.CSS_SELECTOR, "#contents .player_info .tab-depth1 a")
+            for el in candidates:
+                try:
+                    if el.is_displayed() and '투수' in (el.text or '').strip():
+                        target = el
+                        break
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        if target is None:
+            try:
+                candidates = driver.find_elements(By.PARTIAL_LINK_TEXT, '투수')
+                for el in candidates:
+                    try:
+                        if el.is_displayed():
+                            target = el
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+        if target is None:
+            return False
+        driver.execute_script('arguments[0].scrollIntoView({block: "center"});', target)
+        try:
+            wait.until(EC.element_to_be_clickable(target))
+            target.click()
+        except Exception:
+            driver.execute_script('arguments[0].click();', target)
+        # 하위 탭 노출 대기
+        try:
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#contents .player_info .tab-depth2')))
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+def _get_daily_records_soup(driver, wait) -> Optional[BeautifulSoup]:
+    """선수 기본 페이지에서 셀레니움 클릭으로 '일자별기록' 탭으로 이동 후 soup 반환.
+    직접 URL 이동은 차단 페이지를 유발하므로 사용하지 않음.
+    """
+    try:
+        prev_url = driver.current_url
+
+        # 사용자가 제공한 정확 CSS 우선
+        el = None
+        exact_sel = '#contents > div.sub-content > div.player_info > div.tab-depth2 > ul > li:nth-child(3) > a'
+        try:
+            candidate = driver.find_element(By.CSS_SELECTOR, exact_sel)
+            if candidate and candidate.is_displayed() and candidate.is_enabled():
+                el = candidate
+        except Exception:
+            el = None
+        # 폴백: tab-depth2 내부 Daily 링크 중 표시/활성된 것
+        if el is None:
+            try:
+                candidates = driver.find_elements(By.CSS_SELECTOR, '#contents .player_info .tab-depth2 a[href*="Daily.aspx"]')
+                for c in candidates:
+                    try:
+                        if c.is_displayed() and c.is_enabled():
+                            el = c
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                el = None
+        # 폴백: 텍스트 기반
+        if el is None:
+            try:
+                candidates = driver.find_elements(By.PARTIAL_LINK_TEXT, '일자별기록')
+                for c in candidates:
+                    try:
+                        if c.is_displayed() and c.is_enabled():
+                            el = c
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                el = None
+        if el is None:
+            print("    [경고] '일자별기록' 탭 링크를 찾을 수 없습니다.")
+            return None
+
+        driver.execute_script('arguments[0].scrollIntoView({block: "center"});', el)
+        try:
+            wait.until(EC.element_to_be_clickable(el))
+            el.click()
+        except Exception:
+            driver.execute_script('arguments[0].click();', el)
+
+        # URL 변경 또는 Daily 콘텐츠 로드 대기
+        try:
+            wait.until(lambda d: ('Daily.aspx' in d.current_url) or (len(d.find_elements(By.XPATH, "//*[contains(normalize-space(),'일자별 성적')]")) > 0))
+        except Exception:
+            pass
+        # 일자별 페이지 고유 마커 대기
+        try:
+            wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(normalize-space(),'일자별 성적')]")))
+        except Exception:
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.player_records')))
+        print("    [정보] Daily 페이지 진입 확인")
+        return BeautifulSoup(driver.page_source, 'html.parser')
+    except TimeoutException:
+        print("    [경고] '일자별기록' 탭 로딩 타임아웃")
+        return None
+    except Exception as e:
+        print(f"    [경고] '일자별기록' 탭 이동 실패: {e}")
+        return None
+
 def scrape_all_players_and_details():
     """
     모든 선수의 상세 정보를 수집하는 제너레이터 함수
@@ -153,7 +519,7 @@ def scrape_all_players_and_details():
 
     try:
         # team_codes = ['LG', 'OB', 'HH', 'HT', 'SS', 'KT', 'SK', 'LT', 'NC', 'WO']
-        team_codes = ['SK', 'WO']
+        team_codes = ['NC', 'OB']
         search_url = "https://www.koreabaseball.com/Player/Search.aspx"
         wait = WebDriverWait(driver, 20)
         
@@ -236,9 +602,7 @@ def scrape_all_players_and_details():
                                 'teamName': team_name,
                                 'imageUrl': None,
                                 'batterStats': None,
-                                'batterCalculatedStats': None,
-                                'pitcherStats': None,
-                                'pitcherCalculatedStats': None
+                                'pitcherStats': None
                             }
                             yield player_data
                             continue
@@ -259,9 +623,7 @@ def scrape_all_players_and_details():
                                     'teamName': team_name,
                                     'imageUrl': None,
                                     'batterStats': None,
-                                    'batterCalculatedStats': None,
-                                    'pitcherStats': None,
-                                    'pitcherCalculatedStats': None
+                                    'pitcherStats': None
                                 }
                                 yield player_data
                                 continue
@@ -278,9 +640,7 @@ def scrape_all_players_and_details():
                                         'teamName': team_name,
                                         'imageUrl': None,
                                         'batterStats': None,
-                                        'batterCalculatedStats': None,
-                                        'pitcherStats': None,
-                                        'pitcherCalculatedStats': None
+                                        'pitcherStats': None
                                     }
                                     yield player_data
                                     continue
@@ -339,14 +699,11 @@ def scrape_all_players_and_details():
                         # 1. 선수 기록 영역 안의 모든 기록 테이블을 찾습니다. (3개가 찾아짐)
                         all_stats_tables = soup.select('.player_records table.tbl.tt')
 
+                        # 기본 페이지 테이블이 없어도 '일자별기록'에서 월간을 파싱할 수 있으므로 조기 종료하지 않음
                         if not all_stats_tables or "기록이 없습니다" in all_stats_tables[0].text:
-                            print(f"    [정보] {player_name} 선수는 파싱할 스탯 테이블이 없습니다.")
-                            player_data['batterStats'] = None
-                            player_data['batterCalculatedStats'] = None
-                            player_data['pitcherStats'] = None
-                            player_data['pitcherCalculatedStats'] = None
-                            yield player_data
-                            continue # 다음 선수로 넘어감
+                            print(f"    [정보] {player_name} 기본 페이지는 파싱할 스탯 테이블이 없음. 일자별기록에서 월간 시도.")
+                            combined_raw_stats = {}
+                        
 
                         # 2. 찾은 테이블 중 앞의 두 개만 선택합니다. (최근 10경기 제외)
                         tables_to_parse = all_stats_tables[:2]
@@ -421,22 +778,35 @@ def scrape_all_players_and_details():
                                         except (ValueError, TypeError):
                                             calculated_stats_dict[key] = 0
 
-                        # 선수 타입에 따라 스탯 저장
+                        # 선수 타입에 따라 스탯 저장 (통합 형태로 전송)
+                        # 공통: 일자별기록 탭에서 월간 합계 시도 (일자별기록 탭이 실제 월별 표 위치)
+                        try:
+                            current_year = datetime.now().year
+                            daily_soup = _get_daily_records_soup(driver, wait)
+                            # 롤백: 월간 파싱 로직 제거. 이후 단계에서는 월간 수집을 수행하지 않음.
+                            b_monthlies, p_monthlies = [], []
+                        except Exception as monthly_e:
+                            print(f"    [경고] 월간 합계 파싱 실패(공통): {monthly_e}")
+                            b_monthlies, p_monthlies = [], []
+
                         if is_pitcher:
-                            player_data['pitcherStats'] = base_stats_dict
-                            player_data['pitcherCalculatedStats'] = calculated_stats_dict
+                            # 투수 스탯: 기본 기록과 계산 지표를 하나로 통합
+                            pitcher_stats_combined = base_stats_dict.copy()
+                            pitcher_stats_combined.update(calculated_stats_dict)
+                            player_data['pitcherStats'] = pitcher_stats_combined
                             player_data['batterStats'] = None
-                            player_data['batterCalculatedStats'] = None
                         elif is_batter:
-                            player_data['batterStats'] = base_stats_dict
-                            player_data['batterCalculatedStats'] = calculated_stats_dict
+                            # 타자 스탯: 기본 기록과 계산 지표를 하나로 통합
+                            batter_stats_combined = base_stats_dict.copy()
+                            batter_stats_combined.update(calculated_stats_dict)
+                            player_data['batterStats'] = batter_stats_combined
                             player_data['pitcherStats'] = None
-                            player_data['pitcherCalculatedStats'] = None
                         else:
                             player_data['batterStats'] = None
-                            player_data['batterCalculatedStats'] = None
                             player_data['pitcherStats'] = None
-                            player_data['pitcherCalculatedStats'] = None
+                        # 월간 관련 필드 제거 (완전 롤백)
+                        player_data['batterMonthlyStats'] = None
+                        player_data['pitcherMonthlyStats'] = None
                         
                         yield player_data
                         
