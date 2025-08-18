@@ -67,8 +67,6 @@ public class ImageService {
             return null; // URL이 비어있으면 null 반환
         }
 
-        log.info("이미지 다운로드 시작: URL={}, LocationType={}", imageUrl, locationType);
-
         try (InputStream in = new URL(imageUrl).openStream()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -78,15 +76,11 @@ public class ImageService {
             }
             byte[] fileData = out.toByteArray();
 
-            log.info("이미지 다운로드 완료: 크기={} bytes", fileData.length);
-
             // 파일 이름은 URL에서 마지막 부분을 사용하거나, 없으면 UUID로 생성
             String fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
             if (!StringUtils.hasText(fileName) || fileName.length() > 100) { // 너무 길거나 이름이 없는 경우
                 fileName = UUID.randomUUID().toString() + ".jpg";
             }
-
-            log.info("파일명 생성: {}", fileName);
 
             String savedFileName = saveFile(fileName, fileData, locationType);
             log.info("파일 저장 완료: {}", savedFileName);
@@ -189,7 +183,6 @@ public class ImageService {
         // 파일 저장
         try (FileOutputStream fos = new FileOutputStream(fileUploadFullUrl)) {
             fos.write(fileData);
-            log.info("파일 저장 성공: {}", savedFileName);
         } catch (Exception e) {
             log.error("파일 저장 실패: {}", fileUploadFullUrl, e);
             throw e;
@@ -313,5 +306,30 @@ public class ImageService {
         }
 
         return "/api/players/images/" + fileName;
+    }
+
+    /**
+     * 모든 선수 이미지를 일괄 삭제하는 메서드 (긴급 상황용)
+     */
+    public void deleteAllPlayerImages() {
+        try {
+            File playerImageDir = new File(playerImgLocation);
+            if (playerImageDir.exists() && playerImageDir.isDirectory()) {
+                File[] files = playerImageDir.listFiles();
+                if (files != null) {
+                    int deletedCount = 0;
+                    for (File file : files) {
+                        if (file.isFile() && !file.getName().equals("player-default.svg")) {
+                            if (file.delete()) {
+                                deletedCount++;
+                            }
+                        }
+                    }
+                    log.info("선수 이미지 일괄 삭제 완료: {}개 파일 삭제", deletedCount);
+                }
+            }
+        } catch (Exception e) {
+            log.error("선수 이미지 일괄 삭제 중 오류 발생", e);
+        }
     }
 }

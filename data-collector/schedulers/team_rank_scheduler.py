@@ -29,14 +29,14 @@ def schedule_team_rank_collection():
     # 스케줄러 생성
     scheduler = BackgroundScheduler()
     
-    # 1시간마다 실행
-    scheduler.add_job(collect_and_send, 'interval', hours=1, id='team_rank_collection')
+    # 하루에 한 번 실행 (매일 새벽 4시)
+    scheduler.add_job(collect_and_send, 'cron', hour=4, minute=0, id='player_collection')
     
     # 즉시 첫 번째 실행
     collect_and_send()
     
     # 스케줄러 시작
     scheduler.start()
-    logging.info("팀 랭킹 스케줄러가 시작되었습니다. 1시간 간격으로 실행됩니다.")
+    logging.info("팀 랭킹 스케줄러가 시작되었습니다. 매일 새벽 4시마다 실행됩니다.")
     
     return scheduler

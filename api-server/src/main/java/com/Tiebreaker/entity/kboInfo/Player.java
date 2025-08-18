@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
@@ -20,6 +19,9 @@ public class Player {
   private Long id;
 
   private String imageUrl;
+
+  // 원본(크롤링) 이미지 URL - 변경 여부 비교용
+  private String sourceImageUrl;
 
   @Column(nullable = false)
   private String playerName;
@@ -52,17 +54,9 @@ public class Player {
   @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
   private BatterStats batterStats;
 
-  // 1:1 관계 설정. 한 선수는 하나의 기록 지표를 가짐(테스트용)
-  @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
-  private BatterCalculatedStats batterCalculatedStatus;
-
   // 1:1 관계 설정. 한 선수는 하나의 투수 기록을 가짐
   @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
   private PitcherStats pitcherStats;
-
-  // 1:1 관계 설정. 한 선수는 하나의 기록 지표를 가짐(테스트용)
-  @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
-  private PitcherCalculatedStats pitcherCalculatedStats;
 
   // 플레이어 타자 / 투수 / 투타겸업 / 기록없음 분류
   @Enumerated(EnumType.STRING)

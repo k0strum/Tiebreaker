@@ -3,13 +3,9 @@ package com.Tiebreaker.service.kboinfo;
 import com.Tiebreaker.entity.kboInfo.Player;
 import com.Tiebreaker.entity.kboInfo.BatterStats;
 import com.Tiebreaker.entity.kboInfo.PitcherStats;
-import com.Tiebreaker.entity.kboInfo.BatterCalculatedStats;
-import com.Tiebreaker.entity.kboInfo.PitcherCalculatedStats;
 import com.Tiebreaker.repository.kboInfo.PlayerRepository;
 import com.Tiebreaker.repository.kboInfo.BatterStatsRepository;
 import com.Tiebreaker.repository.kboInfo.PitcherStatsRepository;
-import com.Tiebreaker.repository.kboInfo.BatterCalculatedStatsRepository;
-import com.Tiebreaker.repository.kboInfo.PitcherCalculatedStatsRepository;
 import com.Tiebreaker.dto.kboInfo.PlayerDto;
 import com.Tiebreaker.constant.PlayerType;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +25,6 @@ public class KboPlayerService {
   private final PlayerRepository playerRepository;
   private final BatterStatsRepository batterStatsRepository;
   private final PitcherStatsRepository pitcherStatsRepository;
-  private final BatterCalculatedStatsRepository batterCalculatedStatsRepository;
-  private final PitcherCalculatedStatsRepository pitcherCalculatedStatsRepository;
 
   /**
    * 모든 선수 목록 조회 (기본 정보만)
@@ -50,28 +44,17 @@ public class KboPlayerService {
 
     PlayerDto playerDto = convertToPlayerDto(player);
 
-    // 타자 스탯 조회
-    Optional<BatterStats> batterStats = batterStatsRepository.findByPlayerId(playerId);
+    // 타자 스탯 조회 (통합된 BatterStats 사용) - 현재 연도 기준
+    Integer currentYear = java.time.Year.now().getValue();
+    Optional<BatterStats> batterStats = batterStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
     if (batterStats.isPresent()) {
       playerDto.setBatterStats(convertToBatterStatsDto(batterStats.get()));
     }
 
-    // 타자 계산 지표 조회
-    Optional<BatterCalculatedStats> batterCalculatedStats = batterCalculatedStatsRepository.findByPlayerId(playerId);
-    if (batterCalculatedStats.isPresent()) {
-      playerDto.setBatterCalculatedStats(convertToBatterCalculatedStatsDto(batterCalculatedStats.get()));
-    }
-
-    // 투수 스탯 조회
-    Optional<PitcherStats> pitcherStats = pitcherStatsRepository.findByPlayerId(playerId);
+    // 투수 스탯 조회 (통합된 PitcherStats 사용) - 현재 연도 기준
+    Optional<PitcherStats> pitcherStats = pitcherStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
     if (pitcherStats.isPresent()) {
       playerDto.setPitcherStats(convertToPitcherStatsDto(pitcherStats.get()));
-    }
-
-    // 투수 계산 지표 조회
-    Optional<PitcherCalculatedStats> pitcherCalculatedStats = pitcherCalculatedStatsRepository.findByPlayerId(playerId);
-    if (pitcherCalculatedStats.isPresent()) {
-      playerDto.setPitcherCalculatedStats(convertToPitcherCalculatedStatsDto(pitcherCalculatedStats.get()));
     }
 
     return playerDto;
@@ -120,6 +103,9 @@ public class KboPlayerService {
 
   private com.Tiebreaker.dto.kboInfo.BatterStatsDto convertToBatterStatsDto(BatterStats batterStats) {
     com.Tiebreaker.dto.kboInfo.BatterStatsDto dto = new com.Tiebreaker.dto.kboInfo.BatterStatsDto();
+    dto.setYear(batterStats.getYear());
+
+    // === 기본 기록 설정 ===
     dto.setGames(batterStats.getGames());
     dto.setPlateAppearances(batterStats.getPlateAppearances());
     dto.setAtBats(batterStats.getAtBats());
@@ -140,25 +126,25 @@ public class KboPlayerService {
     dto.setCaughtStealing(batterStats.getCaughtStealing());
     dto.setSacrificeHits(batterStats.getSacrificeHits());
     dto.setSacrificeFlies(batterStats.getSacrificeFlies());
-    return dto;
-  }
 
-  private com.Tiebreaker.dto.kboInfo.BatterCalculatedStatsDto convertToBatterCalculatedStatsDto(
-      BatterCalculatedStats batterCalculatedStats) {
-    com.Tiebreaker.dto.kboInfo.BatterCalculatedStatsDto dto = new com.Tiebreaker.dto.kboInfo.BatterCalculatedStatsDto();
-    dto.setBattingAverage(batterCalculatedStats.getBattingAverage());
-    dto.setSluggingPercentage(batterCalculatedStats.getSluggingPercentage());
-    dto.setOnBasePercentage(batterCalculatedStats.getOnBasePercentage());
-    dto.setStolenBasePercentage(batterCalculatedStats.getStolenBasePercentage());
-    dto.setOps(batterCalculatedStats.getOps());
+    // === 계산된 기록 설정 ===
+    dto.setBattingAverage(batterStats.getBattingAverage());
+    dto.setSluggingPercentage(batterStats.getSluggingPercentage());
+    dto.setOnBasePercentage(batterStats.getOnBasePercentage());
+    dto.setStolenBasePercentage(batterStats.getStolenBasePercentage());
+    dto.setOps(batterStats.getOps());
     dto.setBattingAverageWithRunnersInScoringPosition(
-        batterCalculatedStats.getBattingAverageWithRunnersInScoringPosition());
-    dto.setPinchHitBattingAverage(batterCalculatedStats.getPinchHitBattingAverage());
+        batterStats.getBattingAverageWithRunnersInScoringPosition());
+    dto.setPinchHitBattingAverage(batterStats.getPinchHitBattingAverage());
+
     return dto;
   }
 
   private com.Tiebreaker.dto.kboInfo.PitcherStatsDto convertToPitcherStatsDto(PitcherStats pitcherStats) {
     com.Tiebreaker.dto.kboInfo.PitcherStatsDto dto = new com.Tiebreaker.dto.kboInfo.PitcherStatsDto();
+    dto.setYear(pitcherStats.getYear());
+
+    // === 기본 기록 설정 ===
     dto.setGames(pitcherStats.getGames());
     dto.setWins(pitcherStats.getWins());
     dto.setLosses(pitcherStats.getLosses());
@@ -170,8 +156,9 @@ public class KboPlayerService {
     dto.setTotalBattersFaced(pitcherStats.getTotalBattersFaced());
     dto.setNumberOfPitches(pitcherStats.getNumberOfPitches());
 
-    // Double을 다시 원래 형태의 문자열로 변환
-    dto.setInningsPitched(convertInningsToString(pitcherStats.getInningsPitched()));
+    // 이닝을 정수+분수 형태로 설정
+    dto.setInningsPitchedInteger(pitcherStats.getInningsPitchedInteger());
+    dto.setInningsPitchedFraction(pitcherStats.getInningsPitchedFraction());
 
     dto.setHitsAllowed(pitcherStats.getHitsAllowed());
     dto.setDoublesAllowed(pitcherStats.getDoublesAllowed());
@@ -187,44 +174,41 @@ public class KboPlayerService {
     dto.setBalks(pitcherStats.getBalks());
     dto.setSacrificeHitsAllowed(pitcherStats.getSacrificeHitsAllowed());
     dto.setSacrificeFliesAllowed(pitcherStats.getSacrificeFliesAllowed());
-    return dto;
-  }
 
-  private com.Tiebreaker.dto.kboInfo.PitcherCalculatedStatsDto convertToPitcherCalculatedStatsDto(
-      PitcherCalculatedStats pitcherCalculatedStats) {
-    com.Tiebreaker.dto.kboInfo.PitcherCalculatedStatsDto dto = new com.Tiebreaker.dto.kboInfo.PitcherCalculatedStatsDto();
-    dto.setEarnedRunAverage(pitcherCalculatedStats.getEarnedRunAverage());
-    dto.setWinningPercentage(pitcherCalculatedStats.getWinningPercentage());
-    dto.setWhip(pitcherCalculatedStats.getWhip());
-    dto.setBattingAverageAgainst(pitcherCalculatedStats.getBattingAverageAgainst());
+    // === 계산된 기록 설정 ===
+    dto.setEarnedRunAverage(pitcherStats.getEarnedRunAverage());
+    dto.setWinningPercentage(pitcherStats.getWinningPercentage());
+    dto.setWhip(pitcherStats.getWhip());
+    dto.setBattingAverageAgainst(pitcherStats.getBattingAverageAgainst());
+
     return dto;
   }
 
   /**
-   * Double 이닝 값을 원래 형태의 문자열로 변환하는 메서드
-   * 예: 73.333... -> "73 1/3", 45.666... -> "45 2/3", 120.0 -> "120"
+   * 정수+분수 이닝 값을 문자열로 변환하는 메서드
+   * 예: integer=73, fraction=1 -> "73 1/3", integer=45, fraction=2 -> "45 2/3"
    */
-  private String convertInningsToString(Double innings) {
-    if (innings == null) {
-      return "0";
+  private String convertInningsToString(Integer inningsInteger, Integer inningsFraction) {
+    if (inningsInteger == null) {
+      inningsInteger = 0;
+    }
+    if (inningsFraction == null) {
+      inningsFraction = 0;
     }
 
-    int wholeInnings = (int) Math.floor(innings);
-    double fraction = innings - wholeInnings;
-
-    // 소수점 오차를 고려한 비교
-    if (Math.abs(fraction) < 0.01) {
+    if (inningsFraction == 0) {
       // 정수 이닝
-      return String.valueOf(wholeInnings);
-    } else if (Math.abs(fraction - 1.0 / 3.0) < 0.01) {
+      return String.valueOf(inningsInteger);
+    } else if (inningsFraction == 1) {
       // 1/3 이닝
-      return wholeInnings == 0 ? "1/3" : wholeInnings + " 1/3";
-    } else if (Math.abs(fraction - 2.0 / 3.0) < 0.01) {
+      return inningsInteger == 0 ? "1/3" : inningsInteger + " 1/3";
+    } else if (inningsFraction == 2) {
       // 2/3 이닝
-      return wholeInnings == 0 ? "2/3" : wholeInnings + " 2/3";
+      return inningsInteger == 0 ? "2/3" : inningsInteger + " 2/3";
     } else {
-      // 기타 소수점 이닝 (소수점으로 표시)
-      return String.valueOf(innings);
+      // 기타 분수 (소수점으로 표시)
+      double totalInnings = inningsInteger + (inningsFraction * (1.0 / 3.0));
+      return String.valueOf(totalInnings);
     }
   }
 }

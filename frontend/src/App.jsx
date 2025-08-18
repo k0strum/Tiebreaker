@@ -7,9 +7,10 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 // 컴포넌트 import
 import Header from './components/Header.jsx'
 
-// 페이지 컴포넌트들 (나중에 별도 파일로 분리 가능)
+// 페이지 컴포넌트들
 import Home from './pages/Home.jsx'
 import PlayerStats from './pages/PlayerStats.jsx'
+import PlayerDetail from './pages/PlayerDetail.jsx'
 import Chat from './pages/Chat.jsx'
 import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
@@ -42,6 +43,7 @@ const AppContent = () => {
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/stats" element={<PlayerStats />} />
+          <Route path="/player-detail/:playerId" element={<PlayerDetail />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/chatbot" element={<Chatbot />} />

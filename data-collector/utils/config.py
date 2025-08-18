@@ -7,8 +7,9 @@ def get_config():
     return {
         'kafka': {
             'bootstrap_servers': 'localhost:9092',
-            'topic_player_data': 'kbo-player-data',
-            'topic_team_rank_data': 'kbo-team-rank-data'
+            'topic_player_yearly': 'kbo-player-yearly',
+            'topic_player_monthly': 'kbo-player-monthly',
+            'topic_team_rank_data': 'kbo-team-rank-data',
         },
         'webdriver': {
             'headless': False,  # 로컬에서는 브라우저 창을 보는 것이 디버깅에 도움
@@ -26,6 +27,7 @@ def get_kafka_config():
     config = get_config()
     return {
         'bootstrap_servers': os.environ.get('KAFKA_BOOTSTRAP_SERVERS', config['kafka']['bootstrap_servers']),
-        'topic_player_data': os.environ.get('KAFKA_TOPIC_PLAYER_DATA', config['kafka']['topic_player_data']),
-        'topic_team_rank_data': os.environ.get('KAFKA_TOPIC_TEAM_RANK_DATA', config['kafka']['topic_team_rank_data'])
+        'topic_player_yearly': os.environ.get('KAFKA_TOPIC_PLAYER_YEARLY', config['kafka']['topic_player_yearly']),
+        'topic_player_monthly': os.environ.get('KAFKA_TOPIC_PLAYER_MONTHLY', config['kafka']['topic_player_monthly']),
+        'topic_team_rank_data': os.environ.get('KAFKA_TOPIC_TEAM_RANK_DATA', config['kafka']['topic_team_rank_data']),
     }

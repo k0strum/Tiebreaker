@@ -4,19 +4,14 @@ import com.Tiebreaker.constant.PlayerType;
 import com.Tiebreaker.dto.kboInfo.PlayerDto;
 import com.Tiebreaker.dto.kboInfo.BatterStatsDto;
 import com.Tiebreaker.dto.kboInfo.PitcherStatsDto;
-import com.Tiebreaker.dto.kboInfo.BatterCalculatedStatsDto;
-import com.Tiebreaker.dto.kboInfo.PitcherCalculatedStatsDto;
+
 import com.Tiebreaker.entity.kboInfo.Player;
 import com.Tiebreaker.entity.kboInfo.BatterStats;
 import com.Tiebreaker.entity.kboInfo.PitcherStats;
-import com.Tiebreaker.entity.kboInfo.BatterCalculatedStats;
-import com.Tiebreaker.entity.kboInfo.PitcherCalculatedStats;
 import com.Tiebreaker.constant.PlayerStatus;
 import com.Tiebreaker.repository.kboInfo.PlayerRepository;
 import com.Tiebreaker.repository.kboInfo.BatterStatsRepository;
 import com.Tiebreaker.repository.kboInfo.PitcherStatsRepository;
-import com.Tiebreaker.repository.kboInfo.BatterCalculatedStatsRepository;
-import com.Tiebreaker.repository.kboInfo.PitcherCalculatedStatsRepository;
 import com.Tiebreaker.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,43 +25,35 @@ public class PlayerDataCollectService {
 
   private final PlayerRepository playerRepository;
   private final BatterStatsRepository batterStatsRepository;
-  private final BatterCalculatedStatsRepository batterCalculatedStatsRepository;
   private final PitcherStatsRepository pitcherStatsRepository;
-  private final PitcherCalculatedStatsRepository pitcherCalculatedStatsRepository;
   private final ImageService imageService;
 
   @Transactional
   public void savePlayerData(PlayerDto playerDto) {
+    log.info("선수 저장 시작: {} ({})", playerDto.getPlayerName(), playerDto.getTeamName());
+
     // 1. 선수 기본 정보 저장 또는 업데이트
     Player player = saveOrUpdatePlayer(playerDto);
 
     boolean isBatter = false;
     boolean isPitcher = false;
 
-    // 2. 타자 순수 스탯 저장 (있는 경우)
+    // 2. 타자 스탯 저장 (있는 경우)
     if (playerDto.getBatterStats() != null) {
       saveBatterStats(player, playerDto.getBatterStats());
       isBatter = true;
     }
 
-    // 3. 타자 계산 지표 저장 (있는 경우)
-    if (playerDto.getBatterCalculatedStats() != null) {
-      saveBatterCalculatedStats(player, playerDto.getBatterCalculatedStats());
-    }
-
-    // 4. 투수 순수 스탯 저장 (있는 경우)
+    // 3. 투수 스탯 저장 (있는 경우)
     if (playerDto.getPitcherStats() != null) {
       savePitcherStats(player, playerDto.getPitcherStats());
       isPitcher = true;
     }
 
-    // 5. 투수 계산 지표 저장 (있는 경우)
-    if (playerDto.getPitcherCalculatedStats() != null) {
-      savePitcherCalculatedStats(player, playerDto.getPitcherCalculatedStats());
-    }
-
     player.setPlayerType(determinePlayerType(isBatter, isPitcher));
 
+    log.info("선수 저장 완료: {} - 타자: {}, 투수: {}",
+        playerDto.getPlayerName(), isBatter, isPitcher);
   }
 
   private Player saveOrUpdatePlayer(PlayerDto playerDto) {
@@ -99,24 +86,40 @@ public class PlayerDataCollectService {
       player.setCareer(playerDto.getCareer());
     }
 
-    // 이미지 URL 처리
+    // 이미지 URL 처리 (옵션 A: URL 변경 시에만 업데이트)
     if (playerDto.getImageUrl() != null && !playerDto.getImageUrl().trim().isEmpty()) {
       try {
-        // 기존 이미지가 있다면 삭제
-        if (player.getImageUrl() != null && !player.getImageUrl().trim().isEmpty()) {
-          imageService.deleteFile(player.getImageUrl(), "player");
-        }
+        String incomingUrl = playerDto.getImageUrl().trim();
+        String currentSourceUrl = player.getSourceImageUrl();
 
-        // 새로운 이미지 다운로드 및 저장
-        String savedImagePath = imageService.downloadAndSavePlayerImage(playerDto.getImageUrl());
-        if (savedImagePath != null) {
-          player.setImageUrl(savedImagePath);
-          log.info("선수 이미지 저장 완료: {} -> {}", playerDto.getPlayerName(), savedImagePath);
+        if (currentSourceUrl != null && currentSourceUrl.equals(incomingUrl)) {
+          // 변경 없음 → 스킵
+          // 로그는 과다출력을 피하기 위해 debug로만 남김
+          log.debug("선수 이미지 URL 변경 없음: {}", playerDto.getPlayerName());
         } else {
-          log.warn("선수 이미지 저장 실패: {}", playerDto.getPlayerName());
+          // 새 이미지 우선 다운로드
+          String previousImagePath = player.getImageUrl();
+          String savedImagePath = imageService.downloadAndSavePlayerImage(incomingUrl);
+          if (savedImagePath != null) {
+            // 성공 시 DB 경로 및 소스 URL 교체
+            player.setImageUrl(savedImagePath);
+            player.setSourceImageUrl(incomingUrl);
+            log.info("선수 이미지 업데이트: {}", playerDto.getPlayerName());
+
+            // 과거 파일 삭제는 성공 후 수행
+            if (previousImagePath != null && !previousImagePath.trim().isEmpty()) {
+              try {
+                imageService.deleteFile(previousImagePath, "player");
+              } catch (Exception deleteException) {
+                log.warn("기존 이미지 삭제 실패: {} - {}", playerDto.getPlayerName(), deleteException.getMessage());
+              }
+            }
+          } else {
+            log.warn("선수 이미지 다운로드 실패: {}", playerDto.getPlayerName());
+          }
         }
       } catch (Exception e) {
-        log.error("선수 이미지 처리 중 오류 발생: {} - {}", playerDto.getPlayerName(), e.getMessage(), e);
+        log.error("선수 이미지 처리 중 오류 발생: {} - {}", playerDto.getPlayerName(), e.getMessage());
       }
     }
 
@@ -124,10 +127,19 @@ public class PlayerDataCollectService {
   }
 
   private void saveBatterStats(Player player, BatterStatsDto batterStatsDto) {
-    BatterStats batterStats = batterStatsRepository.findByPlayerId(player.getId())
+    // 연도 설정 (기본값: 현재 연도)
+    Integer year = batterStatsDto.getYear();
+    if (year == null) {
+      year = java.time.Year.now().getValue();
+    }
+
+    BatterStats batterStats = batterStatsRepository.findByPlayerIdAndYear(player.getId(), year)
         .orElse(new BatterStats());
 
     batterStats.setPlayer(player);
+    batterStats.setYear(year);
+
+    // === 기본 기록 설정 ===
     batterStats.setGames(batterStatsDto.getGames());
     batterStats.setPlateAppearances(batterStatsDto.getPlateAppearances());
     batterStats.setAtBats(batterStatsDto.getAtBats());
@@ -149,31 +161,31 @@ public class PlayerDataCollectService {
     batterStats.setSacrificeHits(batterStatsDto.getSacrificeHits());
     batterStats.setSacrificeFlies(batterStatsDto.getSacrificeFlies());
 
+    // === 계산된 기록 설정 ===
+    batterStats.setBattingAverage(batterStatsDto.getBattingAverage());
+    batterStats.setSluggingPercentage(batterStatsDto.getSluggingPercentage());
+    batterStats.setOnBasePercentage(batterStatsDto.getOnBasePercentage());
+    batterStats.setStolenBasePercentage(batterStatsDto.getStolenBasePercentage());
+    batterStats.setOps(batterStatsDto.getOps());
+    batterStats
+        .setBattingAverageWithRunnersInScoringPosition(batterStatsDto.getBattingAverageWithRunnersInScoringPosition());
+    batterStats.setPinchHitBattingAverage(batterStatsDto.getPinchHitBattingAverage());
+
     batterStatsRepository.save(batterStats);
   }
 
-  private void saveBatterCalculatedStats(Player player, BatterCalculatedStatsDto batterCalculatedStatsDto) {
-    BatterCalculatedStats batterCalculatedStats = batterCalculatedStatsRepository.findByPlayerId(player.getId())
-        .orElse(new BatterCalculatedStats());
-
-    batterCalculatedStats.setPlayer(player);
-    batterCalculatedStats.setBattingAverage(batterCalculatedStatsDto.getBattingAverage());
-    batterCalculatedStats.setSluggingPercentage(batterCalculatedStatsDto.getSluggingPercentage());
-    batterCalculatedStats.setOnBasePercentage(batterCalculatedStatsDto.getOnBasePercentage());
-    batterCalculatedStats.setStolenBasePercentage(batterCalculatedStatsDto.getStolenBasePercentage());
-    batterCalculatedStats.setOps(batterCalculatedStatsDto.getOps());
-    batterCalculatedStats.setBattingAverageWithRunnersInScoringPosition(
-        batterCalculatedStatsDto.getBattingAverageWithRunnersInScoringPosition());
-    batterCalculatedStats.setPinchHitBattingAverage(batterCalculatedStatsDto.getPinchHitBattingAverage());
-
-    batterCalculatedStatsRepository.save(batterCalculatedStats);
-  }
-
   private void savePitcherStats(Player player, PitcherStatsDto pitcherStatsDto) {
-    PitcherStats pitcherStats = pitcherStatsRepository.findByPlayerId(player.getId())
+    // 연도 설정 (기본값: 현재 연도)
+    Integer year = pitcherStatsDto.getYear();
+    if (year == null) {
+      year = java.time.Year.now().getValue();
+    }
+
+    PitcherStats pitcherStats = pitcherStatsRepository.findByPlayerIdAndYear(player.getId(), year)
         .orElse(new PitcherStats());
 
     pitcherStats.setPlayer(player);
+    pitcherStats.setYear(year);
     pitcherStats.setGames(pitcherStatsDto.getGames());
     pitcherStats.setWins(pitcherStatsDto.getWins());
     pitcherStats.setLosses(pitcherStatsDto.getLosses());
@@ -185,10 +197,17 @@ public class PlayerDataCollectService {
     pitcherStats.setTotalBattersFaced(pitcherStatsDto.getTotalBattersFaced());
     pitcherStats.setNumberOfPitches(pitcherStatsDto.getNumberOfPitches());
 
-    // 이닝 파싱 로직 추가
-    Double parsedInnings = parseInningsPitched(pitcherStatsDto.getInningsPitched());
-    log.info("선수 {} 이닝 파싱 결과: '{}' -> {}", player.getPlayerName(), pitcherStatsDto.getInningsPitched(), parsedInnings);
-    pitcherStats.setInningsPitched(parsedInnings);
+    // 이닝 설정 - 문자열에서 파싱하여 정수+분수 형태로 변경
+    String inningsString = pitcherStatsDto.getInningsPitched();
+    if (inningsString != null && !inningsString.trim().isEmpty()) {
+      parseAndSetInningsPitched(inningsString, pitcherStats);
+    } else {
+      // DTO에서 정수+분수 형태로 직접 설정 (백업)
+      Integer integerPart = pitcherStatsDto.getInningsPitchedInteger();
+      Integer fractionPart = pitcherStatsDto.getInningsPitchedFraction();
+      pitcherStats.setInningsPitchedInteger(integerPart != null ? integerPart : 0);
+      pitcherStats.setInningsPitchedFraction(fractionPart != null ? fractionPart : 0);
+    }
 
     pitcherStats.setHitsAllowed(pitcherStatsDto.getHitsAllowed());
     pitcherStats.setDoublesAllowed(pitcherStatsDto.getDoublesAllowed());
@@ -207,20 +226,13 @@ public class PlayerDataCollectService {
     pitcherStats.setSacrificeHitsAllowed(pitcherStatsDto.getSacrificeHitsAllowed());
     pitcherStats.setSacrificeFliesAllowed(pitcherStatsDto.getSacrificeFliesAllowed());
 
+    // === 계산된 기록 설정 ===
+    pitcherStats.setEarnedRunAverage(pitcherStatsDto.getEarnedRunAverage());
+    pitcherStats.setWinningPercentage(pitcherStatsDto.getWinningPercentage());
+    pitcherStats.setWhip(pitcherStatsDto.getWhip());
+    pitcherStats.setBattingAverageAgainst(pitcherStatsDto.getBattingAverageAgainst());
+
     pitcherStatsRepository.save(pitcherStats);
-  }
-
-  private void savePitcherCalculatedStats(Player player, PitcherCalculatedStatsDto pitcherCalculatedStatsDto) {
-    PitcherCalculatedStats pitcherCalculatedStats = pitcherCalculatedStatsRepository.findByPlayerId(player.getId())
-        .orElse(new PitcherCalculatedStats());
-
-    pitcherCalculatedStats.setPlayer(player);
-    pitcherCalculatedStats.setEarnedRunAverage(pitcherCalculatedStatsDto.getEarnedRunAverage());
-    pitcherCalculatedStats.setWinningPercentage(pitcherCalculatedStatsDto.getWinningPercentage());
-    pitcherCalculatedStats.setWhip(pitcherCalculatedStatsDto.getWhip());
-    pitcherCalculatedStats.setBattingAverageAgainst(pitcherCalculatedStatsDto.getBattingAverageAgainst());
-
-    pitcherCalculatedStatsRepository.save(pitcherCalculatedStats);
   }
 
   private PlayerType determinePlayerType(boolean isBatter, boolean isPitcher) {
@@ -235,74 +247,66 @@ public class PlayerDataCollectService {
   }
 
   /**
-   * KBO 이닝 문자열을 Double로 파싱하는 메서드
-   * 예: "73 1/3" -> 73.333..., "45 2/3" -> 45.666..., "120" -> 120.0
+   * KBO 이닝 문자열을 정수+분수 형태로 파싱하는 메서드
+   * 예: "73 1/3" -> integer: 73, fraction: 1
    */
-  private Double parseInningsPitched(String inningsValue) {
-    log.info("이닝 파싱 시작 - 원본 값: '{}'", inningsValue);
-
+  private void parseAndSetInningsPitched(String inningsValue, PitcherStats pitcherStats) {
     if (inningsValue == null || inningsValue.trim().isEmpty()) {
-      log.warn("이닝 파싱 - null 또는 빈 값으로 0.0 반환");
-      return 0.0;
+      pitcherStats.setInningsPitchedInteger(0);
+      pitcherStats.setInningsPitchedFraction(0);
+      return;
     }
 
     String inningsStr = inningsValue.trim();
-    log.info("이닝 파싱 - 문자열 변환: '{}'", inningsStr);
 
     try {
       // "42 1/3" 형태 파싱 (공백으로 구분된 형태)
       if (inningsStr.contains(" ")) {
-        String[] parts = inningsStr.split("\\s+"); // 하나 이상의 공백으로 분할
-        log.info("이닝 파싱 - 공백 포함 형태 파싱: parts = {}", java.util.Arrays.toString(parts));
+        String[] parts = inningsStr.split("\\s+");
 
         if (parts.length == 2) {
           int wholeInnings = Integer.parseInt(parts[0].trim());
           String fraction = parts[1].trim();
-          log.info("이닝 파싱 - 정수 부분: {}, 분수 부분: '{}'", wholeInnings, fraction);
 
-          double fractionValue = 0.0;
+          int fractionValue = 0;
           if (fraction.equals("1/3")) {
-            fractionValue = 1.0 / 3.0;
+            fractionValue = 1;
           } else if (fraction.equals("2/3")) {
-            fractionValue = 2.0 / 3.0;
-          } else {
-            log.warn("이닝 파싱 - 알 수 없는 분수 형태: {}", fraction);
-            return (double) wholeInnings; // 분수 부분을 무시하고 정수만 반환
+            fractionValue = 2;
           }
 
-          double result = wholeInnings + fractionValue;
-          log.info("이닝 파싱 - 공백 포함 형태 결과: {} + {} = {}", wholeInnings, fractionValue, result);
-          return result;
-        } else {
-          log.warn("이닝 파싱 - 공백 포함 형태이지만 예상과 다른 구조: parts.length = {}", parts.length);
+          pitcherStats.setInningsPitchedInteger(wholeInnings);
+          pitcherStats.setInningsPitchedFraction(fractionValue);
+          return;
         }
       }
 
       // "1/3", "2/3" 형태 파싱 (분수만 있는 경우)
       if (inningsStr.contains("/")) {
-        log.info("이닝 파싱 - 분수 형태 파싱: {}", inningsStr);
         if (inningsStr.equals("1/3")) {
-          log.info("이닝 파싱 - 1/3 형태 결과: {}", 1.0 / 3.0);
-          return 1.0 / 3.0;
+          pitcherStats.setInningsPitchedInteger(0);
+          pitcherStats.setInningsPitchedFraction(1);
+          return;
         } else if (inningsStr.equals("2/3")) {
-          log.info("이닝 파싱 - 2/3 형태 결과: {}", 2.0 / 3.0);
-          return 2.0 / 3.0;
-        } else {
-          log.warn("이닝 파싱 - 알 수 없는 분수 형태: {}", inningsStr);
+          pitcherStats.setInningsPitchedInteger(0);
+          pitcherStats.setInningsPitchedFraction(2);
+          return;
         }
       }
 
-      // 일반 숫자 형태 (정수 또는 소수)
-      double result = Double.parseDouble(inningsStr);
-      log.info("이닝 파싱 - 일반 숫자 형태 결과: {}", result);
-      return result;
+      // 일반 숫자 형태 (정수)
+      int wholeInnings = Integer.parseInt(inningsStr);
+      pitcherStats.setInningsPitchedInteger(wholeInnings);
+      pitcherStats.setInningsPitchedFraction(0);
 
     } catch (NumberFormatException e) {
       log.error("이닝 파싱 실패: {} - {}", inningsStr, e.getMessage());
-      return 0.0;
+      pitcherStats.setInningsPitchedInteger(0);
+      pitcherStats.setInningsPitchedFraction(0);
     } catch (Exception e) {
       log.error("이닝 파싱 중 예상치 못한 오류: {} - {}", inningsStr, e.getMessage());
-      return 0.0;
+      pitcherStats.setInningsPitchedInteger(0);
+      pitcherStats.setInningsPitchedFraction(0);
     }
   }
 }

@@ -31,11 +31,9 @@ public class PlayerDto {
   // === 하위 스탯 정보 ===
   // 해당 선수의 타자 기록 (타자가 아니면 이 부분은 null)
   private BatterStatsDto batterStats;
-  private BatterCalculatedStatsDto batterCalculatedStats;
 
   // 해당 선수의 투수 기록 (투수가 아니면 이 부분은 null)
   private PitcherStatsDto pitcherStats;
-  private PitcherCalculatedStatsDto pitcherCalculatedStats;
 
   private PlayerType playerType;
 }
