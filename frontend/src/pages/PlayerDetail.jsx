@@ -5,81 +5,23 @@ import axios from '../utils/axios';
 function PlayerDetail() {
   const { playerId } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('season');
+  const [activeTab, setActiveTab] = useState('profile');
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  // 데모 데이터 (실제 API 연동 전까지 사용)
-  const demoPlayer = {
-    id: playerId || '1',
-    name: '김현수',
-    team: 'SSG 랜더스',
-    position: '좌익수',
-    number: '7',
-    birthDate: '1988.01.12',
-    imageUrl: '/images/default-player.jpg',
-    seasonStats: {
-      battingAverage: 0.312,
-      homeRuns: 25,
-      rbi: 89,
-      onBasePercentage: 0.389,
-      ops: 0.892,
-      stolenBases: 8,
-      games: 125,
-      atBats: 456,
-      hits: 142
-    },
-    monthlyStats: [
-      { month: '3월', battingAverage: 0.350, homeRuns: 5, rbi: 18, games: 25 },
-      { month: '4월', battingAverage: 0.280, homeRuns: 3, rbi: 15, games: 28 },
-      { month: '5월', battingAverage: 0.320, homeRuns: 4, rbi: 22, games: 27 },
-      { month: '6월', battingAverage: 0.315, homeRuns: 4, rbi: 20, games: 26 },
-      { month: '7월', battingAverage: 0.298, homeRuns: 3, rbi: 12, games: 24 },
-      { month: '8월', battingAverage: 0.350, homeRuns: 6, rbi: 22, games: 25 }
-    ],
-    careerStats: {
-      totalGames: 612,
-      totalHomeRuns: 156,
-      totalRbi: 589,
-      totalStolenBases: 45,
-      careerBattingAverage: 0.298,
-      careerOnBasePercentage: 0.375
-    },
-    yearlyStats: [
-      { year: '2020', battingAverage: 0.285, homeRuns: 18, rbi: 67 },
-      { year: '2021', battingAverage: 0.312, homeRuns: 22, rbi: 89 },
-      { year: '2022', battingAverage: 0.298, homeRuns: 19, rbi: 78 },
-      { year: '2023', battingAverage: 0.305, homeRuns: 21, rbi: 82 },
-      { year: '2024', battingAverage: 0.312, homeRuns: 25, rbi: 89 }
-    ],
-    awards: [
-      { year: '2024', title: '7월 타율왕 (3위)', type: 'monthly' },
-      { year: '2023', title: '골든글러브 좌익수 부문', type: 'major' },
-      { year: '2022', title: '올스타전 선발', type: 'allstar' },
-      { year: '2021', title: '타점왕 (2위)', type: 'season' }
-    ],
-    news: [
-      { date: '2024.08.15', title: '김현수, 8월 타율 0.350으로 상승', url: '#' },
-      { date: '2024.08.10', title: '김현수, 연속 10경기 안타 기록', url: '#' },
-      { date: '2024.08.05', title: '김현수, 시즌 25호 홈런 달성', url: '#' },
-      { date: '2024.07.30', title: '김현수, 7월 타율왕 경쟁 치열', url: '#' }
-    ]
-  };
+  
 
   useEffect(() => {
-    // 실제 API 호출 시뮬레이션
     const fetchPlayerData = async () => {
       setLoading(true);
       try {
-        // 실제 API 연동 시: const response = await axios.get(`/players/${playerId}`);
-        // 현재는 데모 데이터 사용
-        setTimeout(() => {
-          setPlayer(demoPlayer);
-          setLoading(false);
-        }, 500);
+        // 백엔드 매핑: GET /api/info/players/{playerId} (baseURL에 /api 포함됨)
+        const { data } = await axios.get(`/info/players/${playerId}`);
+        setPlayer(data);
+        setLoading(false);
       } catch (error) {
         console.error('선수 데이터 로딩 실패:', error);
+        setPlayer(null);
         setLoading(false);
       }
     };
@@ -98,29 +40,71 @@ function PlayerDetail() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${player?.name} 선수 기록`,
-        text: `${player?.name} 선수의 상세 기록을 확인해보세요!`,
+        title: `${player?.playerName} 선수 기록`,
+        text: `${player?.playerName} 선수의 상세 기록을 확인해보세요!`,
         url: window.location.href
       });
     } else {
-      // 폴백: 클립보드에 복사
       navigator.clipboard.writeText(window.location.href);
       alert('링크가 클립보드에 복사되었습니다!');
     }
   };
 
   const formatValue = (value, type) => {
+    if (value === null || value === undefined) return '-';
+    
     switch (type) {
       case 'battingAverage':
       case 'onBasePercentage':
+      case 'sluggingPercentage':
       case 'ops':
-        return value.toFixed(3);
-      case 'era':
+      case 'stolenBasePercentage':
+      case 'battingAverageWithRunnersInScoringPosition':
+      case 'pinchHitBattingAverage':
+      case 'earnedRunAverage':
       case 'whip':
-        return value.toFixed(2);
+      case 'battingAverageAgainst':
+      case 'winningPercentage':
+        return value.toFixed(3);
       default:
         return value;
     }
+  };
+
+  const formatInnings = (integer, fraction) => {
+    if (integer === null || integer === undefined) return '-';
+    if (fraction === null || fraction === undefined) return `${integer}.0`;
+    return `${integer}.${fraction}`;
+  };
+
+  const getAvailableTabs = () => {
+    const tabs = [];
+    
+    // 기본 정보는 항상 표시
+    tabs.push({ id: 'profile', name: '기본정보', icon: '👤' });
+    
+    // 타자 기록이 있으면 타자 탭들 추가
+    if (player?.batterStats) {
+      tabs.push({ id: 'batter-season', name: '타자시즌', icon: '⚾' });
+      if (player?.batterMonthlyStats?.length > 0) {
+        tabs.push({ id: 'batter-monthly', name: '타자월별', icon: '📈' });
+      }
+    }
+    
+    // 투수 기록이 있으면 투수 탭들 추가
+    if (player?.pitcherStats) {
+      tabs.push({ id: 'pitcher-season', name: '투수시즌', icon: '🎯' });
+      if (player?.pitcherMonthlyStats?.length > 0) {
+        tabs.push({ id: 'pitcher-monthly', name: '투수월별', icon: '📊' });
+      }
+    }
+    
+    // 기록이 없으면 기본 탭만
+    if (tabs.length === 1) {
+      tabs.push({ id: 'no-stats', name: '기록없음', icon: '⚠️' });
+    }
+    
+    return tabs;
   };
 
   if (loading) {
@@ -156,6 +140,9 @@ function PlayerDetail() {
       </div>
     );
   }
+
+  const availableTabs = getAvailableTabs();
+  const hasAnyStats = player.batterStats || player.pitcherStats;
 
   return (
     <div className="container mx-auto p-8">
@@ -196,36 +183,54 @@ function PlayerDetail() {
                 <span className="text-4xl">👤</span>
               </div>
               <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">{player.number}</span>
+                <span className="text-white text-sm font-bold">{player.backNumber}</span>
               </div>
             </div>
           </div>
 
           {/* 프로필 정보 */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">{player.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">{player.playerName}</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-600">팀:</span>
-                  <span className="font-semibold text-blue-600">{player.team}</span>
+                  <span className="font-semibold text-blue-600">{player.teamName}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-600">포지션:</span>
                   <span className="font-semibold">{player.position}</span>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600">등번호:</span>
+                  <span className="font-semibold">#{player.backNumber}</span>
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-600">등번호:</span>
-                  <span className="font-semibold">#{player.number}</span>
-                </div>
-                <div className="flex items-center space-x-2">
                   <span className="text-gray-600">생년월일:</span>
-                  <span className="font-semibold">{player.birthDate}</span>
+                  <span className="font-semibold">{player.birthday}</span>
                 </div>
+                {player.heightWeight && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600">신체:</span>
+                    <span className="font-semibold">{player.heightWeight}</span>
+                  </div>
+                )}
+                {player.draftRank && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600">지명:</span>
+                    <span className="font-semibold">{player.draftRank}</span>
+                  </div>
+                )}
               </div>
             </div>
+            {player.career && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">경력: </span>
+                <span className="font-medium">{player.career}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -233,13 +238,7 @@ function PlayerDetail() {
       {/* 탭 네비게이션 */}
       <div className="bg-white rounded-lg shadow-md mb-6">
         <div className="flex overflow-x-auto">
-          {[
-            { id: 'season', name: '시즌성적', icon: '📊' },
-            { id: 'monthly', name: '월별추이', icon: '📈' },
-            { id: 'career', name: '통산기록', icon: '🏆' },
-            { id: 'awards', name: '수상내역', icon: '🎖️' },
-            { id: 'news', name: '뉴스', icon: '📰' }
-          ].map((tab) => (
+          {availableTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -258,36 +257,92 @@ function PlayerDetail() {
 
       {/* 탭 내용 */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        {activeTab === 'season' && (
+        {activeTab === 'profile' && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">2024 시즌 성적</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">기본 정보</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">타격 성적</h3>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">개인 정보</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">이름</span>
+                    <span className="font-bold">{player.playerName}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">팀</span>
+                    <span className="font-bold text-blue-600">{player.teamName}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">포지션</span>
+                    <span className="font-bold">{player.position}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">등번호</span>
+                    <span className="font-bold">#{player.backNumber}</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">상세 정보</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">생년월일</span>
+                    <span className="font-bold">{player.birthday}</span>
+                  </div>
+                  {player.heightWeight && (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">신체 조건</span>
+                      <span className="font-bold">{player.heightWeight}</span>
+                    </div>
+                  )}
+                  {player.draftRank && (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">지명 순위</span>
+                      <span className="font-bold">{player.draftRank}</span>
+                    </div>
+                  )}
+                  {player.career && (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">경력</span>
+                      <span className="font-bold">{player.career}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'batter-season' && player.batterStats && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">{player.batterStats.year} 시즌 타격 성적</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">주요 타격 성적</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">타율</span>
-                    <span className="font-bold text-blue-600">{formatValue(player.seasonStats.battingAverage, 'battingAverage')}</span>
+                    <span className="font-bold text-blue-600">{formatValue(player.batterStats.battingAverage, 'battingAverage')}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">홈런</span>
-                    <span className="font-bold text-red-600">{player.seasonStats.homeRuns}개</span>
+                    <span className="font-bold text-red-600">{player.batterStats.homeRuns}개</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">타점</span>
-                    <span className="font-bold text-green-600">{player.seasonStats.rbi}점</span>
+                    <span className="font-bold text-green-600">{player.batterStats.runsBattedIn}점</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">출루율</span>
-                    <span className="font-bold text-purple-600">{formatValue(player.seasonStats.onBasePercentage, 'onBasePercentage')}</span>
+                    <span className="font-bold text-purple-600">{formatValue(player.batterStats.onBasePercentage, 'onBasePercentage')}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">장타율</span>
+                    <span className="font-bold text-orange-600">{formatValue(player.batterStats.sluggingPercentage, 'sluggingPercentage')}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">OPS</span>
-                    <span className="font-bold text-orange-600">{formatValue(player.seasonStats.ops, 'ops')}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">도루</span>
-                    <span className="font-bold text-teal-600">{player.seasonStats.stolenBases}개</span>
+                    <span className="font-bold text-indigo-600">{formatValue(player.batterStats.ops, 'ops')}</span>
                   </div>
                 </div>
               </div>
@@ -296,15 +351,27 @@ function PlayerDetail() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">경기수</span>
-                    <span className="font-bold">{player.seasonStats.games}경기</span>
+                    <span className="font-bold">{player.batterStats.games}경기</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">타석</span>
+                    <span className="font-bold">{player.batterStats.plateAppearances}타석</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">타수</span>
-                    <span className="font-bold">{player.seasonStats.atBats}타수</span>
+                    <span className="font-bold">{player.batterStats.atBats}타수</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">안타</span>
-                    <span className="font-bold">{player.seasonStats.hits}개</span>
+                    <span className="font-bold">{player.batterStats.hits}개</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">도루</span>
+                    <span className="font-bold text-teal-600">{player.batterStats.stolenBases}개</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">득점</span>
+                    <span className="font-bold">{player.batterStats.runs}점</span>
                   </div>
                 </div>
               </div>
@@ -312,23 +379,26 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'monthly' && (
+        {activeTab === 'batter-monthly' && player.batterMonthlyStats && player.batterMonthlyStats.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">월별 성적 변화</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">월별 타격 성적 변화</h2>
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-4">타율 변화</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-end justify-between h-32 mb-4">
-                  {player.monthlyStats.map((stat, index) => (
-                    <div key={stat.month} className="flex flex-col items-center">
-                      <div 
-                        className="bg-blue-500 rounded-t w-8 mb-2 transition-all hover:bg-blue-600"
-                        style={{ height: `${(stat.battingAverage / 0.4) * 100}%` }}
-                      ></div>
-                      <span className="text-xs text-gray-600">{stat.battingAverage.toFixed(3)}</span>
-                      <span className="text-xs font-medium">{stat.month}</span>
-                    </div>
-                  ))}
+                  {player.batterMonthlyStats.map((stat) => {
+                    const battingAverage = stat.atBats > 0 ? stat.hits / stat.atBats : 0;
+                    return (
+                      <div key={`${stat.year}-${stat.month}`} className="flex flex-col items-center">
+                        <div 
+                          className="bg-blue-500 rounded-t w-8 mb-2 transition-all hover:bg-blue-600"
+                          style={{ height: `${(battingAverage / 0.4) * 100}%` }}
+                        ></div>
+                        <span className="text-xs text-gray-600">{battingAverage.toFixed(3)}</span>
+                        <span className="text-xs font-medium">{stat.month}월</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -339,22 +409,31 @@ function PlayerDetail() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">월</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">경기</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">타율</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">홈런</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">타점</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">경기수</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">안타</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">볼넷</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">삼진</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {player.monthlyStats.map((stat) => (
-                      <tr key={stat.month} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium">{stat.month}</td>
-                        <td className="px-4 py-3">{stat.battingAverage.toFixed(3)}</td>
-                        <td className="px-4 py-3">{stat.homeRuns}개</td>
-                        <td className="px-4 py-3">{stat.rbi}점</td>
-                        <td className="px-4 py-3">{stat.games}경기</td>
-                      </tr>
-                    ))}
+                    {player.batterMonthlyStats.map((stat) => {
+                      const battingAverage = stat.atBats > 0 ? stat.hits / stat.atBats : 0;
+                      return (
+                        <tr key={`${stat.year}-${stat.month}`} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium">{stat.month}월</td>
+                          <td className="px-4 py-3">{stat.games}경기</td>
+                          <td className="px-4 py-3">{battingAverage.toFixed(3)}</td>
+                          <td className="px-4 py-3">{stat.homeRuns}개</td>
+                          <td className="px-4 py-3">{stat.runsBattedIn}점</td>
+                          <td className="px-4 py-3">{stat.hits}개</td>
+                          <td className="px-4 py-3">{stat.walks}개</td>
+                          <td className="px-4 py-3">{stat.strikeouts}개</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -362,108 +441,149 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'career' && (
+        {activeTab === 'pitcher-season' && player.pitcherStats && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">통산 기록 (2020-2024)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">{player.pitcherStats.year} 시즌 투구 성적</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">통산 성적 요약</h3>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">주요 투구 성적</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">총 경기</span>
-                    <span className="font-bold">{player.careerStats.totalGames}경기</span>
+                    <span className="text-gray-600">평균자책점</span>
+                    <span className="font-bold text-blue-600">{formatValue(player.pitcherStats.earnedRunAverage, 'earnedRunAverage')}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">총 홈런</span>
-                    <span className="font-bold">{player.careerStats.totalHomeRuns}개</span>
+                    <span className="text-gray-600">승수</span>
+                    <span className="font-bold text-green-600">{player.pitcherStats.wins}승</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">총 타점</span>
-                    <span className="font-bold">{player.careerStats.totalRbi}점</span>
+                    <span className="text-gray-600">패수</span>
+                    <span className="font-bold text-red-600">{player.pitcherStats.losses}패</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">총 도루</span>
-                    <span className="font-bold">{player.careerStats.totalStolenBases}개</span>
+                    <span className="text-gray-600">세이브</span>
+                    <span className="font-bold text-purple-600">{player.pitcherStats.saves}개</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">통산 타율</span>
-                    <span className="font-bold">{player.careerStats.careerBattingAverage.toFixed(3)}</span>
+                    <span className="text-gray-600">홀드</span>
+                    <span className="font-bold text-orange-600">{player.pitcherStats.holds}개</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">통산 출루율</span>
-                    <span className="font-bold">{player.careerStats.careerOnBasePercentage.toFixed(3)}</span>
+                    <span className="text-gray-600">WHIP</span>
+                    <span className="font-bold text-indigo-600">{formatValue(player.pitcherStats.whip, 'whip')}</span>
                   </div>
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">연도별 성적 변화</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full table-auto">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">연도</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">타율</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">홈런</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">타점</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {player.yearlyStats.map((stat) => (
-                        <tr key={stat.year} className="border-b hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium">{stat.year}</td>
-                          <td className="px-4 py-3">{stat.battingAverage.toFixed(3)}</td>
-                          <td className="px-4 py-3">{stat.homeRuns}개</td>
-                          <td className="px-4 py-3">{stat.rbi}점</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <h3 className="text-lg font-semibold text-gray-700 mb-4">기타 기록</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">경기수</span>
+                    <span className="font-bold">{player.pitcherStats.games}경기</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">이닝</span>
+                    <span className="font-bold">{formatInnings(player.pitcherStats.inningsPitchedInteger, player.pitcherStats.inningsPitchedFraction)}이닝</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">삼진</span>
+                    <span className="font-bold">{player.pitcherStats.strikeouts}개</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">완투</span>
+                    <span className="font-bold">{player.pitcherStats.completeGames}개</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">완봉</span>
+                    <span className="font-bold">{player.pitcherStats.shutouts}개</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">퀄리티스타트</span>
+                    <span className="font-bold">{player.pitcherStats.qualityStarts}개</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'awards' && (
+        {activeTab === 'pitcher-monthly' && player.pitcherMonthlyStats && player.pitcherMonthlyStats.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">수상 내역</h2>
-            <div className="space-y-4">
-              {player.awards.map((award, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="text-2xl">
-                    {award.type === 'major' ? '🏆' : 
-                     award.type === 'allstar' ? '⭐' : 
-                     award.type === 'season' ? '🥇' : '🎖️'}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-800">{award.title}</div>
-                    <div className="text-sm text-gray-600">{award.year}년</div>
-                  </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">월별 투구 성적 변화</h2>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">평균자책점 변화</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-end justify-between h-32 mb-4">
+                  {player.pitcherMonthlyStats.map((stat) => {
+                    const era = stat.inningsPitchedInteger > 0 ? (stat.earnedRuns * 9) / (stat.inningsPitchedInteger + stat.inningsPitchedFraction / 3) : 0;
+                    return (
+                      <div key={`${stat.year}-${stat.month}`} className="flex flex-col items-center">
+                        <div 
+                          className="bg-red-500 rounded-t w-8 mb-2 transition-all hover:bg-red-600"
+                          style={{ height: `${Math.min((era / 5) * 100, 100)}%` }}
+                        ></div>
+                        <span className="text-xs text-gray-600">{era.toFixed(2)}</span>
+                        <span className="text-xs font-medium">{stat.month}월</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">월별 상세 기록</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">월</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">경기</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">이닝</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">평균자책점</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">승수</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">패수</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">세이브</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">홀드</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {player.pitcherMonthlyStats.map((stat) => {
+                      const era = stat.inningsPitchedInteger > 0 ? (stat.earnedRuns * 9) / (stat.inningsPitchedInteger + stat.inningsPitchedFraction / 3) : 0;
+                      return (
+                        <tr key={`${stat.year}-${stat.month}`} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium">{stat.month}월</td>
+                          <td className="px-4 py-3">{stat.games}경기</td>
+                          <td className="px-4 py-3">{formatInnings(stat.inningsPitchedInteger, stat.inningsPitchedFraction)}이닝</td>
+                          <td className="px-4 py-3">{era.toFixed(2)}</td>
+                          <td className="px-4 py-3">{stat.wins}승</td>
+                          <td className="px-4 py-3">{stat.losses}패</td>
+                          <td className="px-4 py-3">{stat.saves}개</td>
+                          <td className="px-4 py-3">{stat.holds}개</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'news' && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">관련 뉴스</h2>
-            <div className="space-y-4">
-              {player.news.map((item, index) => (
-                <div key={index} className="border-b pb-4 last:border-b-0">
-                  <div className="flex items-start space-x-4">
-                    <div className="text-gray-400 text-sm min-w-[80px]">{item.date}</div>
-                    <div className="flex-1">
-                      <a 
-                        href={item.url} 
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                      >
-                        {item.title}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {activeTab === 'no-stats' && !hasAnyStats && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">📊</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">경기 기록이 없습니다</h2>
+            <p className="text-gray-600 mb-6">
+              {player.playerName} 선수의 {new Date().getFullYear()} 시즌 경기 기록이 없습니다.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="font-semibold text-gray-700 mb-2">가능한 이유:</h3>
+              <ul className="text-sm text-gray-600 space-y-1 text-left">
+                <li>• 아직 경기에 출전하지 않음</li>
+                <li>• 부상으로 인한 결장</li>
+                <li>• 2군에서 활동 중</li>
+                <li>• 시즌 중 입단</li>
+              </ul>
             </div>
           </div>
         )}

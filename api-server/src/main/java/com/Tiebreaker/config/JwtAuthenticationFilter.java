@@ -66,6 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 requestURI.equals("/api/members/login") ||
                 requestURI.equals("/api/info/current/teamRank") ||
                 requestURI.startsWith("/api/rankings/") ||
+                requestURI.startsWith("/api/player/") ||
                 requestURI.startsWith("/actuator/") ||
                 requestURI.equals("/") ||
                 requestURI.startsWith("/css/") ||

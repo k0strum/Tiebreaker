@@ -247,6 +247,14 @@ public class PlayerDataCollectService {
   }
 
   /**
+   * 선수 존재 여부를 확인하는 메서드
+   */
+  @Transactional(readOnly = true)
+  public boolean isPlayerExists(Long playerId) {
+    return playerRepository.existsById(playerId);
+  }
+
+  /**
    * KBO 이닝 문자열을 정수+분수 형태로 파싱하는 메서드
    * 예: "73 1/3" -> integer: 73, fraction: 1
    */
