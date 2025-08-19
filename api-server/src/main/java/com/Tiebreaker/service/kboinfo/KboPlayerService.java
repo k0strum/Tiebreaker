@@ -3,10 +3,12 @@ package com.Tiebreaker.service.kboinfo;
 import com.Tiebreaker.entity.kboInfo.Player;
 import com.Tiebreaker.entity.kboInfo.BatterStats;
 import com.Tiebreaker.entity.kboInfo.PitcherStats;
-import com.Tiebreaker.repository.kboInfo.PlayerRepository;
-import com.Tiebreaker.repository.kboInfo.BatterStatsRepository;
-import com.Tiebreaker.repository.kboInfo.PitcherStatsRepository;
-import com.Tiebreaker.dto.kboInfo.PlayerDto;
+import com.Tiebreaker.entity.kboInfo.BatterMonthlyStats;
+import com.Tiebreaker.entity.kboInfo.PitcherMonthlyStats;
+import com.Tiebreaker.repository.kboInfo.*;
+import com.Tiebreaker.dto.kboInfo.PlayerDetailResponseDto;
+import com.Tiebreaker.dto.kboInfo.BatterMonthlyStatsDto;
+import com.Tiebreaker.dto.kboInfo.PitcherMonthlyStatsDto;
 import com.Tiebreaker.constant.PlayerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.Year;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,8 @@ public class KboPlayerService {
   private final PlayerRepository playerRepository;
   private final BatterStatsRepository batterStatsRepository;
   private final PitcherStatsRepository pitcherStatsRepository;
+  private final BatterMonthlyStatsRepository batterMonthlyStatsRepository;
+  private final PitcherMonthlyStatsRepository pitcherMonthlyStatsRepository;
 
   /**
    * 모든 선수 목록 조회 (기본 정보만)
@@ -35,29 +40,57 @@ public class KboPlayerService {
   }
 
   /**
-   * 특정 선수의 모든 정보 조회 (기본 정보 + 스탯)
+   * 선수 상세 정보 조회 (기본 정보 + 시즌 스탯 + 월별 스탯)
    */
   @Transactional(readOnly = true)
-  public PlayerDto getPlayerWithStats(Long playerId) {
+  public PlayerDetailResponseDto getPlayerDetail(Long playerId) {
     Player player = playerRepository.findById(playerId)
         .orElseThrow(() -> new RuntimeException("선수를 찾을 수 없습니다: " + playerId));
 
-    PlayerDto playerDto = convertToPlayerDto(player);
+    PlayerDetailResponseDto detail = new PlayerDetailResponseDto();
+    detail.setId(player.getId());
+    detail.setPlayerName(player.getPlayerName());
+    detail.setTeamName(player.getTeamName());
+    detail.setPosition(player.getPosition());
+    detail.setBackNumber(player.getBackNumber());
+    detail.setBirthday(player.getBirthday());
+    detail.setHeightWeight(player.getHeightWeight());
+    detail.setDraftRank(player.getDraftRank());
+    detail.setCareer(player.getCareer());
+    detail.setImageUrl(player.getImageUrl());
+    detail.setPlayerType(player.getPlayerType());
 
-    // 타자 스탯 조회 (통합된 BatterStats 사용) - 현재 연도 기준
-    Integer currentYear = java.time.Year.now().getValue();
-    Optional<BatterStats> batterStats = batterStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
-    if (batterStats.isPresent()) {
-      playerDto.setBatterStats(convertToBatterStatsDto(batterStats.get()));
+    Integer currentYear = Year.now().getValue();
+
+    // 시즌 스탯 (타자)
+    Optional<BatterStats> batterStatsOpt = batterStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
+    batterStatsOpt.ifPresent(bs -> detail.setBatterStats(convertToBatterStatsDto(bs)));
+
+    // 시즌 스탯 (투수)
+    Optional<PitcherStats> pitcherStatsOpt = pitcherStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
+    pitcherStatsOpt.ifPresent(ps -> detail.setPitcherStats(convertToPitcherStatsDto(ps)));
+
+    // 월별 스탯 (타자)
+    List<BatterMonthlyStats> batterMonthly = batterMonthlyStatsRepository
+        .findByPlayer_IdAndYearOrderByMonthAsc(playerId, currentYear);
+    if (batterMonthly != null && !batterMonthly.isEmpty()) {
+      List<BatterMonthlyStatsDto> batterMonthlyDtos = batterMonthly.stream()
+          .map(this::convertToBatterMonthlyStatsDto)
+          .collect(Collectors.toList());
+      detail.setBatterMonthlyStats(batterMonthlyDtos);
     }
 
-    // 투수 스탯 조회 (통합된 PitcherStats 사용) - 현재 연도 기준
-    Optional<PitcherStats> pitcherStats = pitcherStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
-    if (pitcherStats.isPresent()) {
-      playerDto.setPitcherStats(convertToPitcherStatsDto(pitcherStats.get()));
+    // 월별 스탯 (투수)
+    List<PitcherMonthlyStats> pitcherMonthly = pitcherMonthlyStatsRepository
+        .findByPlayer_IdAndYearOrderByMonthAsc(playerId, currentYear);
+    if (pitcherMonthly != null && !pitcherMonthly.isEmpty()) {
+      List<PitcherMonthlyStatsDto> pitcherMonthlyDtos = pitcherMonthly.stream()
+          .map(this::convertToPitcherMonthlyStatsDto)
+          .collect(Collectors.toList());
+      detail.setPitcherMonthlyStats(pitcherMonthlyDtos);
     }
 
-    return playerDto;
+    return detail;
   }
 
   /**
@@ -82,23 +115,6 @@ public class KboPlayerService {
   @Transactional(readOnly = true)
   public List<Player> searchPlayersByName(String playerName) {
     return playerRepository.findByPlayerNameContainingIgnoreCase(playerName);
-  }
-
-  // Entity to DTO 변환 메서드들
-  private PlayerDto convertToPlayerDto(Player player) {
-    PlayerDto playerDto = new PlayerDto();
-    playerDto.setId(player.getId());
-    playerDto.setPlayerName(player.getPlayerName());
-    playerDto.setTeamName(player.getTeamName());
-    playerDto.setBirthday(player.getBirthday());
-    playerDto.setHeightWeight(player.getHeightWeight());
-    playerDto.setDraftRank(player.getDraftRank());
-    playerDto.setBackNumber(player.getBackNumber());
-    playerDto.setPosition(player.getPosition());
-    playerDto.setCareer(player.getCareer());
-    playerDto.setImageUrl(player.getImageUrl());
-    playerDto.setPlayerType(player.getPlayerType());
-    return playerDto;
   }
 
   private com.Tiebreaker.dto.kboInfo.BatterStatsDto convertToBatterStatsDto(BatterStats batterStats) {
@@ -181,6 +197,50 @@ public class KboPlayerService {
     dto.setWhip(pitcherStats.getWhip());
     dto.setBattingAverageAgainst(pitcherStats.getBattingAverageAgainst());
 
+    return dto;
+  }
+
+  private BatterMonthlyStatsDto convertToBatterMonthlyStatsDto(BatterMonthlyStats e) {
+    BatterMonthlyStatsDto dto = new BatterMonthlyStatsDto();
+    dto.setYear(e.getYear());
+    dto.setMonth(e.getMonth());
+    dto.setGames(e.getGames());
+    dto.setPlateAppearances(e.getPlateAppearances());
+    dto.setAtBats(e.getAtBats());
+    dto.setHits(e.getHits());
+    dto.setDoubles(e.getDoubles());
+    dto.setTriples(e.getTriples());
+    dto.setHomeRuns(e.getHomeRuns());
+    dto.setRunsBattedIn(e.getRunsBattedIn());
+    dto.setRuns(e.getRuns());
+    dto.setWalks(e.getWalks());
+    dto.setHitByPitch(e.getHitByPitch());
+    dto.setStrikeouts(e.getStrikeouts());
+    dto.setStolenBases(e.getStolenBases());
+    dto.setCaughtStealing(e.getCaughtStealing());
+    dto.setGroundedIntoDoublePlay(e.getGroundedIntoDoublePlay());
+    return dto;
+  }
+
+  private PitcherMonthlyStatsDto convertToPitcherMonthlyStatsDto(PitcherMonthlyStats e) {
+    PitcherMonthlyStatsDto dto = new PitcherMonthlyStatsDto();
+    dto.setYear(e.getYear());
+    dto.setMonth(e.getMonth());
+    dto.setGames(e.getGames());
+    dto.setInningsPitchedInteger(e.getInningsPitchedInteger());
+    dto.setInningsPitchedFraction(e.getInningsPitchedFraction());
+    dto.setStrikeouts(e.getStrikeouts());
+    dto.setRunsAllowed(e.getRunsAllowed());
+    dto.setEarnedRuns(e.getEarnedRuns());
+    dto.setHitsAllowed(e.getHitsAllowed());
+    dto.setHomeRunsAllowed(e.getHomeRunsAllowed());
+    dto.setTotalBattersFaced(e.getTotalBattersFaced());
+    dto.setWalksAllowed(e.getWalksAllowed());
+    dto.setHitByPitch(e.getHitByPitch());
+    dto.setWins(e.getWins());
+    dto.setLosses(e.getLosses());
+    dto.setSaves(e.getSaves());
+    dto.setHolds(e.getHolds());
     return dto;
   }
 

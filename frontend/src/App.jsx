@@ -43,7 +43,7 @@ const AppContent = () => {
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/stats" element={<PlayerStats />} />
-          <Route path="/player-detail/:playerId" element={<PlayerDetail />} />
+          <Route path="/player/:playerId" element={<PlayerDetail />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/chatbot" element={<Chatbot />} />

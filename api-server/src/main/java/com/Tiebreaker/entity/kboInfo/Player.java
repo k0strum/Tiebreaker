@@ -26,21 +26,21 @@ public class Player {
   @Column(nullable = false)
   private String playerName;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String birthday;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String heightWeight;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String draftRank;
 
   private String backNumber;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String position;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String career;
 
   @Column(nullable = false)

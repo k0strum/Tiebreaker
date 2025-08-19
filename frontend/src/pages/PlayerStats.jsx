@@ -80,6 +80,7 @@ function PlayerStats() {
     }
     
     return apiData.map(player => ({
+      id: player.playerId,
       rank: player.rank,
       name: player.playerName,
       team: player.teamName,
@@ -133,9 +134,9 @@ function PlayerStats() {
     setSelectedRanking(selectedRanking === rankingId ? null : rankingId);
   };
 
-  const handlePlayerClick = (playerName) => {
+  const handlePlayerClick = (playerId) => {
     // 실제 구현 시에는 playerId를 사용해야 함
-    navigate(`/player-detail/${encodeURIComponent(playerName)}`);
+    navigate(`/player/${playerId}`);
   };
 
   const currentRankings = activeTab === 'batter' ? batterRankings : pitcherRankings;
@@ -255,7 +256,7 @@ function PlayerStats() {
             </div>
             <div className="flex-1">
               <button 
-                onClick={() => handlePlayerClick(topPlayer.name)}
+                onClick={() => handlePlayerClick(topPlayer.id)}
                 className="text-left hover:underline cursor-pointer"
               >
                 <div className="font-semibold text-gray-900">{topPlayer.name}</div>
@@ -279,7 +280,7 @@ function PlayerStats() {
                   <span className="text-xs">👤</span>
                 </div>
                 <button 
-                  onClick={() => handlePlayerClick(player.name)}
+                  onClick={() => handlePlayerClick(player.id)}
                   className="text-left hover:underline cursor-pointer"
                 >
                   <div className="text-sm font-medium text-gray-800">{player.name}</div>

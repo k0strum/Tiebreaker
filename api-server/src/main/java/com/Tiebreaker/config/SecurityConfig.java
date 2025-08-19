@@ -56,6 +56,7 @@ public class SecurityConfig {
                                 "/login/oauth2/code/**", // 소셜 로그인 콜백
                                 "/api/info/current/teamRank", // 팀 순위 조회
                                 "/api/rankings/**", // 선수 순위 조회
+                                "/api/player/**", // 선수 상세 정보 조회
                                 "/ws/**", "/sockjs-node/**", "/static/**", "/*.html" // WebSocket, 정적리소스
                         ).permitAll()
                         .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
