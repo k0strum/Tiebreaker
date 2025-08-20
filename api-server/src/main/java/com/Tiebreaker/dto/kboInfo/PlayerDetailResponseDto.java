@@ -33,4 +33,7 @@ public class PlayerDetailResponseDto {
   // 투수 기록
   private PitcherStatsDto pitcherStats;
   private List<PitcherMonthlyStatsDto> pitcherMonthlyStats;
+
+  // 리그 상수
+  private KboConstantsDto kboConstants;
 }

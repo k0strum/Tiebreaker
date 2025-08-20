@@ -21,51 +21,36 @@ public class BatterStats {
   @JoinColumn(name = "player_id")
   private Player player;
 
-  // 연도 정보 (기본값: 현재 연도)
-  private Integer year;
+  private Integer year; // 연도 정보 (기본값: 현재 연도)
 
   // === 기본 기록 ===
-  private Integer games;
-  // 타석, 타수
-  private Integer plateAppearances;
-  private Integer atBats;
-  // 안타 / 2루타 / 3루타 / 홈런
-  private Integer hits;
-  private Integer doubles;
-  private Integer triples;
-  private Integer homeRuns;
-  // 총 루타, 타점, 득점
-  private Integer totalBases;
-  private Integer runsBattedIn;
-  private Integer runs;
-  // 볼넷 / 사구 / 고의사구
-  private Integer walks;
-  private Integer hitByPitch;
-  private Integer intentionalWalks;
-  // 삼진 / 병살타 / 실책
-  private Integer strikeouts;
-  private Integer groundedIntoDoublePlay;
-  private Integer errors;
-  // 도루 / 도루실패
-  private Integer stolenBases;
-  private Integer caughtStealing;
-  // 희생번트 / 희생플라이
-  private Integer sacrificeHits;
-  private Integer sacrificeFlies;
+  private Integer games; // 경기수
+  private Integer plateAppearances; // 타석
+  private Integer atBats; // 타수
+  private Integer hits; // 안타
+  private Integer doubles; // 2루타
+  private Integer triples; // 3루타
+  private Integer homeRuns; // 홈런
+  private Integer totalBases; // 총 루타
+  private Integer runsBattedIn; // 타점
+  private Integer runs; // 득점
+  private Integer walks; // 볼넷
+  private Integer hitByPitch; // 사구
+  private Integer intentionalWalks; // 고의사구
+  private Integer strikeouts; // 삼진
+  private Integer groundedIntoDoublePlay; // 병살타
+  private Integer errors; // 실책
+  private Integer stolenBases; // 도루
+  private Integer caughtStealing; // 도루실패
+  private Integer sacrificeHits; // 희생번트
+  private Integer sacrificeFlies; // 희생플라이
 
   // === 계산된 기록 ===
-  // 타율
-  private Double battingAverage;
-  // 장타율
-  private Double sluggingPercentage;
-  // 출루율
-  private Double onBasePercentage;
-  // 도루 성공률
-  private Double stolenBasePercentage;
-  // OPS
-  private Double ops;
-  // 득점권 타율
-  private Double battingAverageWithRunnersInScoringPosition;
-  // 대타 타율
-  private Double pinchHitBattingAverage;
+  private Double battingAverage; // 타율
+  private Double sluggingPercentage; // 장타율
+  private Double onBasePercentage; // 출루율
+  private Double stolenBasePercentage; // 도루 성공률
+  private Double ops; // OPS
+  private Double battingAverageWithRunnersInScoringPosition; // 득점권 타율
+  private Double pinchHitBattingAverage; // 대타 타율
 }

@@ -9,7 +9,7 @@ const Header = () => {
 
   const navigationItems = [
     { path: '/', label: '홈' },
-    { path: '/stats', label: '선수정보' },
+    { path: '/rankings', label: '선수정보' },
     { path: '/predictions', label: '승부예측' },
     { path: '/chat', label: '실시간채팅' },
     { path: '/chatbot', label: 'AI챗봇' }

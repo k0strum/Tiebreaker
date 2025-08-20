@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Chart.js 등록
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function PlayerDetail() {
   const { playerId } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile');
-  const [player, setPlayer] = useState(null);
+  const [player, setPlayer] = useState(null); // 선수 데이터
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   
@@ -15,8 +27,8 @@ function PlayerDetail() {
     const fetchPlayerData = async () => {
       setLoading(true);
       try {
-        // 백엔드 매핑: GET /api/info/players/{playerId} (baseURL에 /api 포함됨)
-        const { data } = await axios.get(`/info/players/${playerId}`);
+        // 백엔드 매핑: GET /api/player/{playerId} (baseURL에 /api 포함됨)
+        const { data } = await axios.get(`/player/${playerId}`);
         setPlayer(data);
         setLoading(false);
       } catch (error) {
@@ -30,7 +42,7 @@ function PlayerDetail() {
   }, [playerId]);
 
   const handleBack = () => {
-    navigate('/stats');
+    navigate('/rankings');
   };
 
   const handleFavorite = () => {
@@ -77,35 +89,65 @@ function PlayerDetail() {
     return `${integer}.${fraction}`;
   };
 
-  const getAvailableTabs = () => {
-    const tabs = [];
-    
-    // 기본 정보는 항상 표시
-    tabs.push({ id: 'profile', name: '기본정보', icon: '👤' });
-    
-    // 타자 기록이 있으면 타자 탭들 추가
-    if (player?.batterStats) {
-      tabs.push({ id: 'batter-season', name: '타자시즌', icon: '⚾' });
-      if (player?.batterMonthlyStats?.length > 0) {
-        tabs.push({ id: 'batter-monthly', name: '타자월별', icon: '📈' });
-      }
-    }
-    
-    // 투수 기록이 있으면 투수 탭들 추가
-    if (player?.pitcherStats) {
-      tabs.push({ id: 'pitcher-season', name: '투수시즌', icon: '🎯' });
-      if (player?.pitcherMonthlyStats?.length > 0) {
-        tabs.push({ id: 'pitcher-monthly', name: '투수월별', icon: '📊' });
-      }
-    }
-    
-    // 기록이 없으면 기본 탭만
-    if (tabs.length === 1) {
-      tabs.push({ id: 'no-stats', name: '기록없음', icon: '⚠️' });
-    }
-    
-    return tabs;
+  const formatNum = (value, digits = 3) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+    return Number(value).toFixed(digits);
   };
+
+  // 선수 스탯 계산
+  const kboConstants = player?.kboConstants || {};
+  const cFipConst = kboConstants.cFip ?? 3.2;
+
+  // 타자 스탯
+  // 타율
+  const calculateBattingAverage = (stats) => {
+    return stats.atBats > 0 ? stats.hits / stats.atBats : 0;
+  };
+
+  // 출루율 (kbo에서 월간 희생플라이 제공을 안하므로 타석수로 계산)
+  const calculateOnBasePercentage = (stats) => {
+    const pa = stats.plateAppearances || 0;
+    if (pa <= 0) return 0;
+    return ((stats.hits || 0) + (stats.walks || 0) + (stats.hitByPitch || 0)) / pa;
+  }
+
+  // 장타율
+  const calculateSluggingPercentage = (stats) => {
+    const ab = stats.atBats || 0;
+    if (ab <= 0) return 0;
+    const singles = (stats.hits || 0) - (stats.homeRuns || 0) - (stats.doubles || 0) - (stats.triples || 0);
+    return (singles + 2 * (stats.doubles || 0) + 3 * (stats.triples || 0) + 4 * (stats.homeRuns || 0)) / ab;
+  }
+
+  // ops
+  const calculateOPS = (stats) => {
+    return calculateOnBasePercentage(stats) + calculateSluggingPercentage(stats);
+  }
+
+  // 투수 스탯
+  // 이닝 계산
+  const inningsCalculate = (Integer, Fraction) => {
+    const i = Integer || 0;
+    const f = Fraction || 0;
+    return i + (f / 3);
+  }
+  // 방어율
+  const calculateERA = (stats) => {
+    const totalInnings = inningsCalculate(stats.inningsPitchedInteger, stats.inningsPitchedFraction);
+    return totalInnings > 0 ? (stats.earnedRuns * 9) / totalInnings : 0;
+  };
+
+  // FIP 
+  const calculateFIP = (stats) => {
+    const ip = inningsCalculate(stats.inningsPitchedInteger, stats.inningsPitchedFraction);
+    if (ip <= 0) return 0;
+    const hr = stats.homeRunsAllowed ?? stats.homeRuns; // 월별/시즌 필드 호환
+    const bb = stats.walksAllowed ?? stats.walks;
+    const hbp = stats.hitByPitch || 0;
+    const so = stats.strikeouts || 0;
+    const fipHead = (-2 * so) + (3 * ((bb || 0) + hbp)) + (13 * (hr || 0));
+    return (fipHead / ip) + cFipConst;
+  }
 
   if (loading) {
     return (
@@ -141,7 +183,6 @@ function PlayerDetail() {
     );
   }
 
-  const availableTabs = getAvailableTabs();
   const hasAnyStats = player.batterStats || player.pitcherStats;
 
   return (
@@ -190,7 +231,7 @@ function PlayerDetail() {
 
           {/* 프로필 정보 */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">{player.playerName}</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">{player.playerName}</h1><br/>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
@@ -235,87 +276,56 @@ function PlayerDetail() {
         </div>
       </div>
 
-      {/* 탭 네비게이션 */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex overflow-x-auto">
-          {availableTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-blue-500 text-white border-b-2 border-blue-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-b-2 border-transparent'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 탭 내용 */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {activeTab === 'profile' && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">기본 정보</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">개인 정보</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">이름</span>
-                    <span className="font-bold">{player.playerName}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">팀</span>
-                    <span className="font-bold text-blue-600">{player.teamName}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">포지션</span>
-                    <span className="font-bold">{player.position}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">등번호</span>
-                    <span className="font-bold">#{player.backNumber}</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">상세 정보</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">생년월일</span>
-                    <span className="font-bold">{player.birthday}</span>
-                  </div>
-                  {player.heightWeight && (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-600">신체 조건</span>
-                      <span className="font-bold">{player.heightWeight}</span>
-                    </div>
-                  )}
-                  {player.draftRank && (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-600">지명 순위</span>
-                      <span className="font-bold">{player.draftRank}</span>
-                    </div>
-                  )}
-                  {player.career && (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-600">경력</span>
-                      <span className="font-bold">{player.career}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+      {/* 리그 상수(디버그/확인용) */}
+      {player.kboConstants && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">리그 상수 (확인용)</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">연도</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">wOBA</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Scale</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">eBB</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">1B</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">2B</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">3B</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">HR</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">R/ePA</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">RPW</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">cFIP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="px-4 py-2">{player.kboConstants.year}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.woba)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.scale)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.ebb)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.singles)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.doubles)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.triples)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.homeRuns)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.runsPerEpa)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.rpw)}</td>
+                  <td className="px-4 py-2">{formatNum(player.kboConstants.cFip, 3)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'batter-season' && player.batterStats && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">{player.batterStats.year} 시즌 타격 성적</h2>
+      {/* 통합 정보 섹션 */}
+      <div className="space-y-6">
+        {/* 타자 시즌 기록 */}
+        {player.batterStats && (
+      <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="mr-2">⚾</span>
+              {player.batterStats.year} 시즌 타격 성적
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">주요 타격 성적</h3>
@@ -379,15 +389,21 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'batter-monthly' && player.batterMonthlyStats && player.batterMonthlyStats.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">월별 타격 성적 변화</h2>
+        {/* 타자 월별 기록 */}
+        {player.batterMonthlyStats && player.batterMonthlyStats.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="mr-2">📈</span>
+              월별 타격 성적 변화
+            </h2>
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">타율 변화</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">타율/출루율/장타율(계산) 미니 뷰</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-end justify-between h-32 mb-4">
                   {player.batterMonthlyStats.map((stat) => {
-                    const battingAverage = stat.atBats > 0 ? stat.hits / stat.atBats : 0;
+                    const battingAverage = calculateBattingAverage(stat);
+                    const obp = calculateOnBasePercentage(stat);
+                    const slg = calculateSluggingPercentage(stat);
                     return (
                       <div key={`${stat.year}-${stat.month}`} className="flex flex-col items-center">
                         <div 
@@ -396,6 +412,8 @@ function PlayerDetail() {
                         ></div>
                         <span className="text-xs text-gray-600">{battingAverage.toFixed(3)}</span>
                         <span className="text-xs font-medium">{stat.month}월</span>
+                        <span className="text-[10px] text-emerald-700">OBP {obp.toFixed(3)}</span>
+                        <span className="text-[10px] text-orange-700">SLG {slg.toFixed(3)}</span>
                       </div>
                     );
                   })}
@@ -441,9 +459,13 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'pitcher-season' && player.pitcherStats && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">{player.pitcherStats.year} 시즌 투구 성적</h2>
+        {/* 투수 시즌 기록 */}
+        {player.pitcherStats && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="mr-2">🎯</span>
+              {player.pitcherStats.year} 시즌 투구 성적
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">주요 투구 성적</h3>
@@ -451,6 +473,10 @@ function PlayerDetail() {
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">평균자책점</span>
                     <span className="font-bold text-blue-600">{formatValue(player.pitcherStats.earnedRunAverage, 'earnedRunAverage')}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">FIP(계산)</span>
+                    <span className="font-bold text-rose-600">{formatValue(calculateFIP(player.pitcherStats), 'earnedRunAverage')}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">승수</span>
@@ -507,15 +533,20 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'pitcher-monthly' && player.pitcherMonthlyStats && player.pitcherMonthlyStats.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">월별 투구 성적 변화</h2>
+        {/* 투수 월별 기록 */}
+        {player.pitcherMonthlyStats && player.pitcherMonthlyStats.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="mr-2">📊</span>
+              월별 투구 성적 변화
+            </h2>
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-4">평균자책점 변화</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-end justify-between h-32 mb-4">
                   {player.pitcherMonthlyStats.map((stat) => {
-                    const era = stat.inningsPitchedInteger > 0 ? (stat.earnedRuns * 9) / (stat.inningsPitchedInteger + stat.inningsPitchedFraction / 3) : 0;
+                    const era = calculateERA(stat);
+                    const fip = calculateFIP(stat);
                     return (
                       <div key={`${stat.year}-${stat.month}`} className="flex flex-col items-center">
                         <div 
@@ -524,6 +555,7 @@ function PlayerDetail() {
                         ></div>
                         <span className="text-xs text-gray-600">{era.toFixed(2)}</span>
                         <span className="text-xs font-medium">{stat.month}월</span>
+                        <span className="text-[10px] text-rose-600">FIP {fip.toFixed(2)}</span>
                       </div>
                     );
                   })}
@@ -569,8 +601,9 @@ function PlayerDetail() {
           </div>
         )}
 
-        {activeTab === 'no-stats' && !hasAnyStats && (
-          <div className="text-center py-12">
+        {/* 기록이 없는 경우 */}
+        {!hasAnyStats && (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
             <div className="text-gray-400 text-6xl mb-4">📊</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">경기 기록이 없습니다</h2>
             <p className="text-gray-600 mb-6">
