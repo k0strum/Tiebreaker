@@ -11,22 +11,22 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BatterMonthlyStatsDto {
 
-  private Integer year;
-  private Integer month;
+  private Integer year; // 연도
+  private Integer month; // 월
 
-  private Integer games;
-  private Integer plateAppearances;
-  private Integer atBats;
-  private Integer hits;
-  private Integer doubles;
-  private Integer triples;
-  private Integer homeRuns;
-  private Integer runsBattedIn;
-  private Integer runs;
-  private Integer walks;
-  private Integer hitByPitch;
-  private Integer strikeouts;
-  private Integer stolenBases;
-  private Integer caughtStealing;
-  private Integer groundedIntoDoublePlay;
+  private Integer games; // 경기 수
+  private Integer plateAppearances; // 타석
+  private Integer atBats; // 타수
+  private Integer hits; // 안타
+  private Integer doubles; // 2루타
+  private Integer triples; // 3루타
+  private Integer homeRuns; // 홈런
+  private Integer runsBattedIn; // 타점
+  private Integer runs; // 득점
+  private Integer walks; // 볼넷
+  private Integer hitByPitch; // 사구
+  private Integer strikeouts; // 삼진
+  private Integer stolenBases; // 도루
+  private Integer caughtStealing; // 도루 실패
+  private Integer groundedIntoDoublePlay; // 병살타
 }

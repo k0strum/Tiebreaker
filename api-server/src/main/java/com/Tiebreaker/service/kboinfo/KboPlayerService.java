@@ -1,14 +1,11 @@
 package com.Tiebreaker.service.kboinfo;
 
-import com.Tiebreaker.entity.kboInfo.Player;
-import com.Tiebreaker.entity.kboInfo.BatterStats;
-import com.Tiebreaker.entity.kboInfo.PitcherStats;
-import com.Tiebreaker.entity.kboInfo.BatterMonthlyStats;
-import com.Tiebreaker.entity.kboInfo.PitcherMonthlyStats;
+import com.Tiebreaker.entity.kboInfo.*;
 import com.Tiebreaker.repository.kboInfo.*;
 import com.Tiebreaker.dto.kboInfo.PlayerDetailResponseDto;
 import com.Tiebreaker.dto.kboInfo.BatterMonthlyStatsDto;
 import com.Tiebreaker.dto.kboInfo.PitcherMonthlyStatsDto;
+import com.Tiebreaker.dto.kboInfo.KboConstantsDto;
 import com.Tiebreaker.constant.PlayerType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +27,7 @@ public class KboPlayerService {
   private final PitcherStatsRepository pitcherStatsRepository;
   private final BatterMonthlyStatsRepository batterMonthlyStatsRepository;
   private final PitcherMonthlyStatsRepository pitcherMonthlyStatsRepository;
+  private final KboConstantsRepository kboConstantsRepository;
 
   /**
    * 모든 선수 목록 조회 (기본 정보만)
@@ -44,10 +42,15 @@ public class KboPlayerService {
    */
   @Transactional(readOnly = true)
   public PlayerDetailResponseDto getPlayerDetail(Long playerId) {
+    Integer currentYear = Year.now().getValue();
+    KboConstants kboConstants = kboConstantsRepository.findByYear(currentYear)
+        .orElseThrow(() -> new RuntimeException("해당 연도의 리그 상수를 찾을 수 없습니다: " + currentYear));
+
     Player player = playerRepository.findById(playerId)
         .orElseThrow(() -> new RuntimeException("선수를 찾을 수 없습니다: " + playerId));
 
     PlayerDetailResponseDto detail = new PlayerDetailResponseDto();
+    detail.setKboConstants(convertToKboConstantsDto(kboConstants));
     detail.setId(player.getId());
     detail.setPlayerName(player.getPlayerName());
     detail.setTeamName(player.getTeamName());
@@ -59,8 +62,6 @@ public class KboPlayerService {
     detail.setCareer(player.getCareer());
     detail.setImageUrl(player.getImageUrl());
     detail.setPlayerType(player.getPlayerType());
-
-    Integer currentYear = Year.now().getValue();
 
     // 시즌 스탯 (타자)
     Optional<BatterStats> batterStatsOpt = batterStatsRepository.findByPlayerIdAndYear(playerId, currentYear);
@@ -91,6 +92,26 @@ public class KboPlayerService {
     }
 
     return detail;
+  }
+
+  private KboConstantsDto convertToKboConstantsDto(KboConstants e) {
+    KboConstantsDto dto = new KboConstantsDto();
+    dto.setYear(e.getYear());
+    dto.setWoba(e.getWoba());
+    dto.setScale(e.getScale());
+    dto.setEbb(e.getEbb());
+    dto.setSingles(e.getSingles());
+    dto.setDoubles(e.getDoubles());
+    dto.setTriples(e.getTriples());
+    dto.setHomeRuns(e.getHomeRuns());
+    dto.setSb2(e.getSb2());
+    dto.setSb3(e.getSb3());
+    dto.setCs2(e.getCs2());
+    dto.setCs3(e.getCs3());
+    dto.setRunsPerEpa(e.getRunsPerEpa());
+    dto.setRpw(e.getRpw());
+    dto.setCFip(e.getCFip());
+    return dto;
   }
 
   /**

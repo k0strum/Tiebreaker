@@ -21,53 +21,39 @@ public class PitcherStats {
   @JoinColumn(name = "player_id")
   private Player player;
 
-  // 연도 정보 (기본값: 현재 연도)
-  private Integer year;
+  private Integer year; // 연도 정보 (기본값: 현재 연도)
 
   // === 기본 기록 ===
-  private Integer games;
-  // 승리 / 패배 / 세이브 / 블론세이브 / 홀드
-  private Integer wins;
-  private Integer losses;
-  private Integer saves;
-  private Integer blownSaves;
-  private Integer holds;
-  // 완투 / 완봉
-  private Integer completeGames;
-  private Integer shutouts;
-  // 상대 타자 수, 투구 수
-  private Integer totalBattersFaced;
-  private Integer numberOfPitches;
-  // 이닝, 아웃카운트(0, 1/3, 2/3)
-  private Integer inningsPitchedInteger;
-  private Integer inningsPitchedFraction;
-  // 허용 안타 / 2루타 / 3루타 / 홈런
-  private Integer hitsAllowed;
-  private Integer doublesAllowed;
-  private Integer triplesAllowed;
-  private Integer homeRunsAllowed;
-  // 고의사구, 볼넷, 실점, 자책점
-  private Integer intentionalWalksAllowed;
-  private Integer walksAllowed;
-  private Integer runsAllowed;
-  private Integer earnedRuns;
-  // 폭투, 보크
-  private Integer wildPitches;
-  private Integer balks;
-  // 허용 희생번트, 희생플라이
-  private Integer sacrificeHitsAllowed;
-  private Integer sacrificeFliesAllowed;
-  // 삼진, 퀄리티스타트
-  private Integer strikeouts;
-  private Integer qualityStarts;
+  private Integer games; // 경기수
+  private Integer wins; // 승리
+  private Integer losses; // 패배
+  private Integer saves; // 세이브
+  private Integer blownSaves; // 블론세이브
+  private Integer holds; // 홀드
+  private Integer completeGames; // 완투
+  private Integer shutouts; // 완봉
+  private Integer totalBattersFaced; // 상대 타자 수
+  private Integer numberOfPitches; // 투구 수
+  private Integer inningsPitchedInteger; // 이닝
+  private Integer inningsPitchedFraction; // 아웃카운트(0, 1/3, 2/3)
+  private Integer hitsAllowed; // 허용 안타
+  private Integer doublesAllowed; // 허용 2루타
+  private Integer triplesAllowed; // 허용 3루타
+  private Integer homeRunsAllowed; // 허용 홈런
+  private Integer intentionalWalksAllowed; // 고의사구
+  private Integer walksAllowed; // 볼넷
+  private Integer runsAllowed; // 실점
+  private Integer earnedRuns; // 자책점
+  private Integer wildPitches; // 폭투
+  private Integer balks; // 보크
+  private Integer sacrificeHitsAllowed; // 허용 희생번트
+  private Integer sacrificeFliesAllowed; // 허용 희생플라이
+  private Integer strikeouts; // 삼진
+  private Integer qualityStarts; // 퀄리티스타트
 
   // === 계산된 기록 ===
-  // 평균자책점
-  private Double earnedRunAverage;
-  // 승률
-  private Double winningPercentage;
-  // WHIP
-  private Double whip;
-  // 피안타율
-  private Double battingAverageAgainst;
+  private Double earnedRunAverage; // 평균자책점
+  private Double winningPercentage; // 승률
+  private Double whip; // WHIP
+  private Double battingAverageAgainst; // 피안타율
 }

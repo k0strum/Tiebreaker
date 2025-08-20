@@ -9,7 +9,7 @@ import Header from './components/Header.jsx'
 
 // 페이지 컴포넌트들
 import Home from './pages/Home.jsx'
-import PlayerStats from './pages/PlayerStats.jsx'
+import PlayerRanking from './pages/PlayerRanking.jsx'
 import PlayerDetail from './pages/PlayerDetail.jsx'
 import Chat from './pages/Chat.jsx'
 import Predictions from './pages/Predictions.jsx'
@@ -42,7 +42,7 @@ const AppContent = () => {
           <Route path="/signup-complete" element={<SignupComplete />} />
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
-          <Route path="/stats" element={<PlayerStats />} />
+          <Route path="/rankings" element={<PlayerRanking />} />
           <Route path="/player/:playerId" element={<PlayerDetail />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/predictions" element={<Predictions />} />
