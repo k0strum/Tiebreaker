@@ -38,8 +38,8 @@ function PlayerDetail() {
   ]); // 선택된 타자 지표
   const [selectedPitcherMetrics, setSelectedPitcherMetrics] = useState([
     "era",
-    "fip",
     "whip",
+    "fip",
   ]); // 선택된 투수 지표
 
   useEffect(() => {
@@ -79,6 +79,21 @@ function PlayerDetail() {
       navigator.clipboard.writeText(window.location.href);
       alert("링크가 클립보드에 복사되었습니다!");
     }
+  };
+
+  // 이미지 URL 생성 함수
+  const getPlayerImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+
+    // 파일명만 저장되므로 바로 API 경로와 결합
+    return `http://localhost:8080/api/player/images/${imageUrl}`;
+  };
+
+  // 이미지 로드 실패 처리 함수
+  const handleImageError = (e) => {
+    console.log('이미지 로드 실패:', player.imageUrl);
+    e.target.style.display = 'none';
+    e.target.nextSibling.style.display = 'flex';
   };
 
   const formatValue = (value, type) => {
@@ -181,7 +196,7 @@ function PlayerDetail() {
       stats.inningsPitchedInteger,
       stats.inningsPitchedFraction
     );
-    return totalInnings > 0 ? (stats.hits + stats.walks) / totalInnings : 0;
+    return totalInnings > 0 ? (stats.hitsAllowed + stats.walksAllowed) / totalInnings : 0;
   };
 
   // FIP
@@ -278,25 +293,10 @@ function PlayerDetail() {
               <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
                 {player.imageUrl ? (
                   <img
-                    src={(() => {
-                      // imageUrl이 전체 URL인지 파일명만인지 확인
-                      if (player.imageUrl.startsWith("/api/")) {
-                        // 전체 URL인 경우 (예: /api/players/images/filename.jpg)
-                        // 파일명만 추출하여 올바른 경로로 변환
-                        const fileName = player.imageUrl.split("/").pop();
-                        return `http://localhost:8080/api/player/images/${fileName}`;
-                      }
-
-                      // 파일명만인 경우
-                      return `http://localhost:8080/api/player/images/${player.imageUrl}`;
-                    })()}
+                    src={getPlayerImageUrl(player.imageUrl)}
                     alt={`${player.playerName} 프로필`}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log("이미지 로드 실패:", player.imageUrl);
-                      e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "flex";
-                    }}
+                    onError={handleImageError}
                   />
                 ) : null}
                 <span
@@ -623,7 +623,7 @@ function PlayerDetail() {
             {selectedBatterMetrics.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                  선택된 지표 변화 추이
+                  타자 월간 지표
                 </h3>
                 <div className="bg-white p-6 rounded-lg border">
                   <div className="h-80">
@@ -904,6 +904,16 @@ function PlayerDetail() {
                 </table>
               </div>
             </div>
+            {/* 정보 패널 */}
+            <div className="mt-6 bg-blue-50 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-800 mb-2">ℹ️ 지표 기준 안내</h3>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p>• <strong>타율</strong>: 타자가 안타를 칠 확률</p>
+                <p>• <strong>출루율</strong>: 안타를 포함한 출루 확률</p>
+                <p>• <strong>장타율</strong>: 타자의 장타력을 나타내는 지표</p>
+                <p>• <strong>OPS</strong>: 출루율 + 장타율</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1039,16 +1049,16 @@ function PlayerDetail() {
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={selectedPitcherMetrics.includes("whip")}
+                      checked={selectedPitcherMetrics.includes("era")}
                       onChange={(e) => {
                         if (e.target.checked) {
                           setSelectedPitcherMetrics([
                             ...selectedPitcherMetrics,
-                            "whip",
+                            "era",
                           ]);
                         } else {
                           setSelectedPitcherMetrics(
-                            selectedPitcherMetrics.filter((m) => m !== "whip")
+                            selectedPitcherMetrics.filter((m) => m !== "era")
                           );
                         }
                       }}
@@ -1061,16 +1071,16 @@ function PlayerDetail() {
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={selectedPitcherMetrics.includes("era")}
+                      checked={selectedPitcherMetrics.includes("whip")}
                       onChange={(e) => {
                         if (e.target.checked) {
                           setSelectedPitcherMetrics([
                             ...selectedPitcherMetrics,
-                            "era",
+                            "whip",
                           ]);
                         } else {
                           setSelectedPitcherMetrics(
-                            selectedPitcherMetrics.filter((m) => m !== "era")
+                            selectedPitcherMetrics.filter((m) => m !== "whip")
                           );
                         }
                       }}
@@ -1109,7 +1119,7 @@ function PlayerDetail() {
               {selectedPitcherMetrics.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                    선택된 지표 변화 추이
+                    투수 월간 지표
                   </h3>
                   <div className="bg-white p-6 rounded-lg border">
                     <div className="h-80">
@@ -1139,12 +1149,12 @@ function PlayerDetail() {
                                 },
                               ]
                               : []),
-                            ...(selectedPitcherMetrics.includes("fip")
+                            ...(selectedPitcherMetrics.includes("whip")
                               ? [
                                 {
-                                  label: "FIP",
+                                  label: "WHIP",
                                   data: player.pitcherMonthlyStats.map(
-                                    (stat) => calculateFIP(stat)
+                                    (stat) => calculateWHIP(stat)
                                   ),
                                   borderColor: "rgb(168, 85, 247)",
                                   backgroundColor: "rgba(168, 85, 247, 0.1)",
@@ -1152,6 +1162,26 @@ function PlayerDetail() {
                                   fill: false,
                                   tension: 0.4,
                                   pointBackgroundColor: "rgb(168, 85, 247)",
+                                  pointBorderColor: "#fff",
+                                  pointBorderWidth: 2,
+                                  pointRadius: 6,
+                                  pointHoverRadius: 8,
+                                },
+                              ]
+                              : []),
+                            ...(selectedPitcherMetrics.includes("fip")
+                              ? [
+                                {
+                                  label: "FIP",
+                                  data: player.pitcherMonthlyStats.map(
+                                    (stat) => calculateFIP(stat)
+                                  ),
+                                  borderColor: "rgb(239, 68, 68)",
+                                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                                  borderWidth: 3,
+                                  fill: false,
+                                  tension: 0.4,
+                                  pointBackgroundColor: "rgb(239, 68, 68)",
                                   pointBorderColor: "#fff",
                                   pointBorderWidth: 2,
                                   pointRadius: 6,
@@ -1329,6 +1359,15 @@ function PlayerDetail() {
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+              {/* 정보 패널 */}
+              <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-800 mb-2">ℹ️ 지표 기준 안내</h3>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p>• <strong>평균자책점</strong>: 9이닝 동안 내주는 자책점의 평균</p>
+                  <p>• <strong>WHIP</strong>: 이닝당 타자 출루 횟수</p>
+                  <p>• <strong>FIP</strong>: 투수가 제어할 수 없는 자책점을 제외한 평가 지표</p>
                 </div>
               </div>
             </div>

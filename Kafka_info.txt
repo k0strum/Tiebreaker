@@ -1,3 +1,5 @@
+실행 전 선수 프사 삭제할 것
+
 cd C:\Kafka\kafka_2.13-3.9.1
 
 # Zookeeper 실행
@@ -10,3 +12,4 @@ bin\windows\kafka-server-start.bat config\server.properties
 bin\windows\kafka-topics.bat --create --topic kbo-player-yearly --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 bin\windows\kafka-topics.bat --create --topic kbo-player-monthly --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 bin\windows\kafka-topics.bat --create --topic kbo-team-rank-data --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+bin\windows\kafka-topics.bat --create --topic commentary --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
