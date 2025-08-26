@@ -32,11 +32,11 @@ public class PlayerDataCollectService {
   public void savePlayerData(PlayerDto playerDto) {
     log.info("선수 저장 시작: {} ({})", playerDto.getPlayerName(), playerDto.getTeamName());
 
-    // 1. 선수 기본 정보 저장 또는 업데이트
-    Player player = saveOrUpdatePlayer(playerDto);
-
     boolean isBatter = false;
     boolean isPitcher = false;
+
+    // 1. 선수 기본 정보 저장 또는 업데이트
+    Player player = saveOrUpdatePlayer(playerDto);
 
     // 2. 타자 스탯 저장 (있는 경우)
     if (playerDto.getBatterStats() != null) {

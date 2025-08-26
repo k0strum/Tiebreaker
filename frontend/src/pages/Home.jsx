@@ -17,7 +17,7 @@ const Home = () => {
       setError(null);
       const response = await axios.get('/info/current/teamRank');
       console.log('API 응답:', response.data); // 디버깅용
-      
+
       // 응답이 배열인지 확인하고 안전하게 설정
       if (Array.isArray(response.data)) {
         setTeamRanks(response.data);
@@ -68,7 +68,7 @@ const Home = () => {
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               🔐 인증 상태 확인
             </h2>
-            
+
             {isLoggedIn ? (
               <div className="space-y-4">
                 {/* 사용자 정보 */}
@@ -114,15 +114,15 @@ const Home = () => {
                   </div>
                 </div>
 
-                                 {/* 로그아웃 버튼 */}
-                 <div className="flex justify-center">
-                   <button 
-                     onClick={logout}
-                     className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-semibold shadow-sm"
-                   >
-                     로그아웃
-                   </button>
-                 </div>
+                {/* 로그아웃 버튼 */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={logout}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-semibold shadow-sm"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center space-y-4">
@@ -130,17 +130,17 @@ const Home = () => {
                   <p className="text-lg mb-2">현재 로그인되지 않은 상태입니다.</p>
                   <p>로그인하여 서비스를 이용해보세요!</p>
                 </div>
-                
+
                 {/* 로그인/회원가입 버튼 */}
                 <div className="flex justify-center space-x-4">
-                  <Link 
+                  <Link
                     to="/login"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-bold shadow-sm"
                     style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
                   >
                     로그인
                   </Link>
-                  <Link 
+                  <Link
                     to="/signup"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-[1.02] font-bold shadow-sm"
                     style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
@@ -158,7 +158,7 @@ const Home = () => {
               <h2 className="text-2xl font-semibold text-gray-800">
                 🏟️ KBO 팀 순위
               </h2>
-              <button 
+              <button
                 onClick={fetchTeamRanks}
                 disabled={loading}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium"
@@ -196,11 +196,10 @@ const Home = () => {
                   </thead>
                   <tbody>
                     {teamRanks.map((team, index) => (
-                      <tr 
-                        key={team.teamName} 
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ${
-                          index < 5 ? 'bg-blue-50' : ''
-                        }`}
+                      <tr
+                        key={team.teamName}
+                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ${index < 5 ? 'bg-blue-50' : ''
+                          }`}
                       >
                         <td className="py-3 px-4 font-semibold text-gray-900">
                           {team.rank}
@@ -208,8 +207,8 @@ const Home = () => {
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-3">
                             {team.teamLogoUrl && (
-                              <img 
-                                src={team.teamLogoUrl} 
+                              <img
+                                src={team.teamLogoUrl}
                                 alt={`${team.teamName} 로고`}
                                 className="w-8 h-8 object-contain"
                                 onError={(e) => {
@@ -231,15 +230,14 @@ const Home = () => {
                           {team.gameBehind === 0 ? '-' : team.gameBehind}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            team.streak && team.streak.includes('승')
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${team.streak && team.streak.includes('승')
+                              ? 'bg-green-100 text-green-800'
                               : team.streak && team.streak.includes('패')
-                                ? 'bg-red-100 text-red-800' 
+                                ? 'bg-red-100 text-red-800'
                                 : team.streak && team.streak.includes('무')
                                   ? 'bg-gray-100 text-gray-800'
                                   : 'bg-gray-100 text-gray-600'
-                          }`}>
+                            }`}>
                             {formatStreak(team.streak)}
                           </span>
                         </td>
@@ -266,8 +264,8 @@ const Home = () => {
               <p className="text-gray-600 mb-4">
                 선수들의 상세한 통계 정보를 확인해보세요
               </p>
-              <Link 
-                to="/stats"
+              <Link
+                to="/rankings"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 통계 보기 →
@@ -283,7 +281,7 @@ const Home = () => {
               <p className="text-gray-600 mb-4">
                 경기 결과를 예측하고 포인트를 획득하세요
               </p>
-              <Link 
+              <Link
                 to="/predictions"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
@@ -300,7 +298,7 @@ const Home = () => {
               <p className="text-gray-600 mb-4">
                 다른 사용자들과 실시간으로 소통해보세요
               </p>
-              <Link 
+              <Link
                 to="/chat"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
@@ -312,7 +310,7 @@ const Home = () => {
           {/* 개발자 정보 */}
           <div className="mt-12 text-center text-gray-500">
             <p className="text-sm">
-              개발 중인 프로젝트입니다. 
+              개발 중인 프로젝트입니다.
               <br />
               로그인/회원가입 기능을 테스트해보세요!
             </p>

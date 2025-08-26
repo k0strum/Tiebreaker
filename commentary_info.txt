@@ -1,0 +1,131 @@
+# 문자중계(MVP) 관련 추가/수정 파일 요약
+
+## 백엔드(api-server)
+
+- src/main/java/com/Tiebreaker/entity/Commentary.java
+  - 문자중계 엔티티. 컬럼: id, gameId, ts(Epoch ms), text, severity, inning, half.
+  - 인덱스: (gameId, ts) — 경기별 시간순 조회 최적화.
+
+- src/main/java/com/Tiebreaker/repository/CommentaryRepository.java
+  - JPA 레포지토리. `findByGameIdOrderByTsDesc`로 최근 로그 페이징 조회.
+
+- src/main/java/com/Tiebreaker/dto/commentary/CommentaryEvent.java
+  - 수신 이벤트 DTO. Kafka/REST 등에서 들어오는 단일 문자 이벤트 스키마.
+
+- src/main/java/com/Tiebreaker/service/CommentaryService.java
+  - 저장/조회 서비스 + SSE 구독/브로드캐스트 관리.
+  - `subscribe(gameId)`: SSE 연결 등록. `broadcast(entity)`: 해당 경기 구독자들에게 푸시.
+
+- src/main/java/com/Tiebreaker/service/kafka/CommentaryConsumer.java
+  - Kafka 토픽 `commentary` 컨슈머. 이벤트 수신 → DB 저장 → SSE 브로드캐스트.
+
+- src/main/java/com/Tiebreaker/controller/commentary/CommentaryController.java
+  - REST: `GET /api/games/{gameId}/commentary` — 최근 로그 페이징 조회.
+  - SSE: `GET /api/sse/games/{gameId}/commentary` — 실시간 문자 스트림 구독.
+
+## 수집기(data-collector)
+
+- api/commentary_api.py
+  - 외부 소스에서 문자 이벤트를 가져오는 클라이언트(현재 더미 구현)와 정규화 함수.
+
+- collectors/commentary_collector.py
+  - 경기별 폴링 → 정규화 → Kafka 토픽 `commentary`로 전송.
+  - `run_once(source_game_id, our_game_id)`, `run_loop(pairs, interval)` 제공.
+
+## 프론트엔드(frontend)
+
+- src/utils/useSSECommentary.js
+  - `useSSECommentary(gameId, baseUrl)`: SSE 구독 훅. 연결상태/에러/이벤트 배열 관리.
+
+- src/pages/CommentaryDemo.jsx
+  - 데모 페이지. 입력한 `gameId`의 SSE 이벤트를 리스트로 표시.
+  - 라우트: `/commentary-demo` (App.jsx에 등록).
+
+- src/App.jsx (라우트 추가)
+  - `<Route path="/commentary-demo" element={<CommentaryDemo />} />` 추가.
+
+## 동작 흐름(요약)
+1) 수집기: 외부 → 정규화 → Kafka(`commentary`) 전송.
+2) 백엔드: Kafka 컨슈머가 이벤트 저장 → `CommentaryService.broadcast`로 SSE 브로드캐스트.
+3) 프론트: `useSSECommentary` 훅이 `/api/sse/games/{gameId}/commentary` 구독 → 화면 렌더.
+
+## 확인 방법(요약)
+- 백엔드 실행 후: 브라우저에서 `/api/sse/games/DEMO-GAME/commentary` 접속 시 SSE 스트림 확인.
+- 프론트: `/commentary-demo` 접속 → `gameId` 입력 후 실시간 목록 표시.
+- 수집기: `CommentaryCollector.run_loop([("SRC-001","DEMO-GAME")])` 실행 시 더미 이벤트 흐름 확인.
+
+## 실행/설정 예시
+
+### 1) Kafka 토픽 생성
+- Windows(WSL/Linux) 예시:
+```
+bin/kafka-topics.sh --create --topic commentary --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+```
+- 토픽 확인:
+```
+bin/kafka-topics.sh --list --bootstrap-server localhost:9092 | grep commentary || findstr commentary
+```
+
+### 2) 백엔드 설정(application.properties 예시)
+```
+# Kafka
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.consumer.group-id=tiebreaker-commentary
+spring.kafka.consumer.auto-offset-reset=latest
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+spring.kafka.properties.spring.json.trusted.packages=*
+spring.kafka.properties.spring.json.value.default.type=com.Tiebreaker.dto.commentary.CommentaryEvent
+
+# CORS/SSE 관련(환경에 맞게 조정)
+spring.mvc.async.request-timeout=-1
+```
+
+백엔드 실행(Maven Wrapper):
+```
+cd api-server
+./mvnw spring-boot:run
+```
+Windows PowerShell:
+```
+cd api-server
+mvnw.cmd spring-boot:run
+```
+
+### 3) 프론트 실행(개발 모드)
+```
+cd frontend
+npm install
+npm run dev
+```
+브라우저에서 `http://localhost:5173/commentary-demo` 접속.
+
+백엔드가 8080이라면 프록시 설정(`frontend/vite.config.js`) 예시:
+```
+server: {
+  proxy: {
+    '/api': 'http://localhost:8080'
+  }
+}
+```
+
+### 4) 수집기 실행(더미 이벤트 흐름 확인)
+```
+cd data-collector
+python - << 'PY'
+from collectors.commentary_collector import CommentaryCollector
+c = CommentaryCollector(source_base_url="https://example-source")
+c.run_loop(pairs=[("SRC-001","DEMO-GAME")], interval_sec=2.0)
+PY
+```
+
+수집기 Kafka 설정은 `data-collector/utils/config.py`에 `bootstrap_servers`를 지정하거나, 
+없으면 `localhost:9092` 기본값을 사용합니다.
+
+### 5) 빠른 점검 체크리스트
+- Kafka 브로커 실행 중인지 확인(토픽 존재/컨슈머 lag 0)
+- 백엔드 로그: `CommentaryConsumer`가 이벤트 수신 로그 출력
+- SSE 테스트: 브라우저 탭에서 `/api/sse/games/DEMO-GAME/commentary`에 이벤트가 흘러오는지 확인
+- 프론트 데모: 새 이벤트가 리스트 상단에 실시간 반영되는지 확인
+
+

@@ -49,7 +49,8 @@ public class ImageService {
         if ("profile".equals(locationType)) {
             return "/api/members/images/profile/" + savedFileName;
         } else if ("player".equals(locationType)) {
-            return "/api/players/images/" + savedFileName;
+            // 파일명만 반환 (API 경로 제외)
+            return savedFileName;
         }
         return null;
     }
@@ -90,9 +91,9 @@ public class ImageService {
                 log.info("프로필 이미지 웹 경로: {}", webPath);
                 return webPath;
             } else if ("player".equals(locationType)) {
-                String webPath = "/api/players/images/" + savedFileName;
-                log.info("선수 이미지 웹 경로: {}", webPath);
-                return webPath;
+                // 파일명만 반환 (API 경로 제외)
+                log.info("선수 이미지 파일명: {}", savedFileName);
+                return savedFileName;
             }
             return null;
 
