@@ -4,6 +4,7 @@ import atexit
 from utils.kafka_producer import create_kafka_producer
 from schedulers.team_rank_scheduler import schedule_team_rank_collection
 from schedulers.player_scheduler import schedule_player_collection
+from schedulers.game_schedule_scheduler import run_both_schedulers
 from api.team_rank_api import team_rank_bp
 from api.player_api import player_bp
 
@@ -20,10 +21,12 @@ app.register_blueprint(player_bp)
 # 스케줄러들
 team_rank_scheduler = None
 player_scheduler = None
+game_schedule_weekly_scheduler = None
+game_schedule_daily_scheduler = None
 
 def initialize_schedulers():
     """스케줄러들을 초기화합니다."""
-    global team_rank_scheduler, player_scheduler
+    global team_rank_scheduler, player_scheduler, game_schedule_weekly_scheduler, game_schedule_daily_scheduler
     
     try:
         # Kafka Producer 연결 테스트
@@ -35,6 +38,7 @@ def initialize_schedulers():
             # 스케줄러 시작
             team_rank_scheduler = schedule_team_rank_collection()
             player_scheduler = schedule_player_collection()
+            game_schedule_weekly_scheduler, game_schedule_daily_scheduler = run_both_schedulers()
             
             logging.info("모든 스케줄러가 성공적으로 시작되었습니다.")
         else:
@@ -58,7 +62,9 @@ def health():
 def scheduler_status():
     return jsonify({
         "team_rank_scheduler": "running" if team_rank_scheduler else "stopped",
-        "player_scheduler": "running" if player_scheduler else "stopped"
+        "player_scheduler": "running" if player_scheduler else "stopped",
+        "game_schedule_weekly_scheduler": "running" if game_schedule_weekly_scheduler else "stopped",
+        "game_schedule_daily_scheduler": "running" if game_schedule_daily_scheduler else "stopped"
     })
 
 # 스케줄러 초기화를 위한 전역 변수
@@ -66,7 +72,7 @@ _schedulers_initialized = False
 
 # 앱 시작 시 스케줄러 초기화 (한 번만 실행되도록)
 def initialize_schedulers_once():
-    global _schedulers_initialized, team_rank_scheduler, player_scheduler
+    global _schedulers_initialized, team_rank_scheduler, player_scheduler, game_schedule_weekly_scheduler, game_schedule_daily_scheduler
     
     if _schedulers_initialized:
         return
@@ -81,6 +87,7 @@ def initialize_schedulers_once():
             # 스케줄러 시작
             team_rank_scheduler = schedule_team_rank_collection()
             player_scheduler = schedule_player_collection()
+            game_schedule_weekly_scheduler, game_schedule_daily_scheduler = run_both_schedulers()
             
             _schedulers_initialized = True
             logging.info("모든 스케줄러가 성공적으로 시작되었습니다.")
@@ -92,13 +99,19 @@ def initialize_schedulers_once():
 
 # 앱 종료 시 스케줄러 정리
 def cleanup_schedulers():
-    global team_rank_scheduler, player_scheduler
+    global team_rank_scheduler, player_scheduler, game_schedule_weekly_scheduler, game_schedule_daily_scheduler
     if team_rank_scheduler:
         team_rank_scheduler.shutdown()
         logging.info("팀 랭킹 스케줄러가 종료되었습니다.")
     if player_scheduler:
         player_scheduler.shutdown()
         logging.info("선수 정보 스케줄러가 종료되었습니다.")
+    if game_schedule_weekly_scheduler:
+        game_schedule_weekly_scheduler.shutdown()
+        logging.info("경기 스케줄 주간 스케줄러가 종료되었습니다.")
+    if game_schedule_daily_scheduler:
+        game_schedule_daily_scheduler.shutdown()
+        logging.info("경기 스케줄 일간 스케줄러가 종료되었습니다.")
 
 atexit.register(cleanup_schedulers)
 

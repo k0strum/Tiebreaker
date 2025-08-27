@@ -264,32 +264,4 @@ public class KboPlayerService {
     dto.setHolds(e.getHolds());
     return dto;
   }
-
-  /**
-   * 정수+분수 이닝 값을 문자열로 변환하는 메서드
-   * 예: integer=73, fraction=1 -> "73 1/3", integer=45, fraction=2 -> "45 2/3"
-   */
-  private String convertInningsToString(Integer inningsInteger, Integer inningsFraction) {
-    if (inningsInteger == null) {
-      inningsInteger = 0;
-    }
-    if (inningsFraction == null) {
-      inningsFraction = 0;
-    }
-
-    if (inningsFraction == 0) {
-      // 정수 이닝
-      return String.valueOf(inningsInteger);
-    } else if (inningsFraction == 1) {
-      // 1/3 이닝
-      return inningsInteger == 0 ? "1/3" : inningsInteger + " 1/3";
-    } else if (inningsFraction == 2) {
-      // 2/3 이닝
-      return inningsInteger == 0 ? "2/3" : inningsInteger + " 2/3";
-    } else {
-      // 기타 분수 (소수점으로 표시)
-      double totalInnings = inningsInteger + (inningsFraction * (1.0 / 3.0));
-      return String.valueOf(totalInnings);
-    }
-  }
 }

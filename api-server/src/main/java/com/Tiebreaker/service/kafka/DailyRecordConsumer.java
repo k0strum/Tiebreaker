@@ -1,4 +1,4 @@
-package com.Tiebreaker.service.kboInfoCollecting;
+package com.Tiebreaker.service.kafka;
 
 import com.Tiebreaker.dto.kboInfo.KboRankDto;
 import com.Tiebreaker.dto.kboInfo.PlayerMonthlyStatsMessage;
@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
-public class KafkaConsumerService {
+public class DailyRecordConsumer {
 
   private final ObjectMapper objectMapper;
   private final RankCollectService rankCollectService;
