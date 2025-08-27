@@ -1,5 +1,6 @@
 package com.Tiebreaker.dto.commentary;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 @Getter
@@ -7,6 +8,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CommentaryEvent {
   private String gameId;
   private Long ts;

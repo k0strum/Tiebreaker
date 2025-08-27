@@ -12,7 +12,8 @@ const Header = () => {
     { path: '/rankings', label: '선수정보' },
     { path: '/predictions', label: '승부예측' },
     { path: '/chat', label: '실시간채팅' },
-    { path: '/chatbot', label: 'AI챗봇' }
+    { path: '/chatbot', label: 'AI챗봇' },
+    { path: '/commentary-demo', label: '중계방(테스트)' }
   ];
 
   return (
@@ -46,7 +47,7 @@ const Header = () => {
                   {nickname || '사용자'}
                 </span>
               </div>
-              <button 
+              <button
                 onClick={logout}
                 className="text-sm text-gray-600 hover:text-gray-800 transition-colors px-3 py-1 rounded-md hover:bg-gray-100"
               >
@@ -54,7 +55,7 @@ const Header = () => {
               </button>
             </div>
           ) : (
-            <Link 
+            <Link
               to="/login"
               className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
             >
@@ -73,11 +74,10 @@ const Header = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`text-sm font-bold transition-colors ${
-                location.pathname === item.path
-                  ? 'text-blue-600'
-                  : 'text-gray-800 hover:text-blue-600'
-              }`}
+              className={`text-sm font-bold transition-colors ${location.pathname === item.path
+                ? 'text-blue-600'
+                : 'text-gray-800 hover:text-blue-600'
+                }`}
             >
               {item.label}
             </Link>

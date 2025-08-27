@@ -3,26 +3,30 @@ package com.Tiebreaker.service.kafka;
 import com.Tiebreaker.dto.commentary.CommentaryEvent;
 import com.Tiebreaker.entity.Commentary;
 import com.Tiebreaker.service.CommentaryService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CommentaryConsumer {
 
   private final CommentaryService commentaryService;
+  private final ObjectMapper objectMapper;
 
   @KafkaListener(topics = "commentary", groupId = "tiebreaker-commentary")
-  public void onMessage(@Payload CommentaryEvent event) {
+  public void onMessage(String message) {
     try {
+      CommentaryEvent event = objectMapper.readValue(message, CommentaryEvent.class);
       Commentary saved = commentaryService.save(event);
       commentaryService.broadcast(saved);
+      System.out.println("✅ 해설 데이터 처리 완료: " + event.getText());
+    } catch (JsonProcessingException e) {
+      System.err.println("❌ Error parsing - Commentary JSON String: " + e.getMessage());
     } catch (Exception e) {
-      log.error("Failed to process commentary event: {}", event, e);
+      System.err.println("❌ Error processing commentary event: " + e.getMessage());
     }
   }
 }

@@ -31,7 +31,10 @@ public class CommentaryService {
         .inning(event.getInning())
         .half(event.getHalf())
         .build();
-    return commentaryRepository.save(c);
+
+    Commentary saved = commentaryRepository.save(c);
+    System.out.println("✅ 해설 데이터 저장 완료: " + event.getText());
+    return saved;
   }
 
   public Page<Commentary> listRecent(String gameId, int page, int size) {
@@ -58,6 +61,7 @@ public class CommentaryService {
   public void broadcast(Commentary c) {
     Set<SseEmitter> emitters = emitterByGame.getOrDefault(c.getGameId(), Collections.emptySet());
     List<SseEmitter> toRemove = new ArrayList<>();
+
     for (SseEmitter emitter : emitters) {
       try {
         emitter.send(SseEmitter.event()
@@ -70,10 +74,22 @@ public class CommentaryService {
                 "inning", c.getInning(),
                 "half", c.getHalf())));
       } catch (IOException e) {
+        // SSE 연결이 끊어진 경우 (브라우저 탭 닫기, 새로고침 등)
+        // 정상적인 상황이므로 에러 로그 대신 디버그 로그로 처리
+        System.out.println("🔌 SSE 연결 종료");
+        toRemove.add(emitter);
+      } catch (IllegalStateException e) {
+        // 이미 완료된 emitter
+        System.out.println("🔌 SSE 연결 이미 종료됨");
         toRemove.add(emitter);
       }
     }
+
     toRemove.forEach(em -> removeEmitter(c.getGameId(), em));
+
+    if (!emitters.isEmpty()) {
+      System.out.println("✅ 해설 브로드캐스트 완료: " + c.getText() + " (구독자: " + emitters.size() + "명)");
+    }
   }
 
   private void removeEmitter(String gameId, SseEmitter emitter) {
