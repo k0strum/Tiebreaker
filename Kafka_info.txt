@@ -15,3 +15,4 @@ bin\windows\kafka-topics.bat --create --topic kbo-team-rank-data --bootstrap-ser
 bin\windows\kafka-topics.bat --create --topic commentary --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 bin\windows\kafka-topics.bat --create --topic kbo-game-schedule --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1 --config retention.ms=2592000000
 bin\windows\kafka-topics.bat --create --topic kbo-today-games  --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+bin\windows\kafka-topics.bat --create --topic live-game-info  --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
