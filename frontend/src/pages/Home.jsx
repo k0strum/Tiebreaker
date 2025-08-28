@@ -7,7 +7,9 @@ import axios from '../utils/axios';
 const Home = () => {
   const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, loginType, logout } = useAuth();
   const [teamRanks, setTeamRanks] = useState([]);
+  const [todayGames, setTodayGames] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [gamesLoading, setGamesLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // 팀 순위 데이터 가져오기
@@ -36,8 +38,24 @@ const Home = () => {
     }
   };
 
+  // 오늘 경기 데이터 가져오기
+  const fetchTodayGames = async () => {
+    try {
+      setGamesLoading(true);
+      const today = new Date().toISOString().slice(0, 10);
+      const response = await axios.get(`/games?date=${today}`);
+      setTodayGames(response.data || []);
+    } catch (err) {
+      console.error('오늘 경기 데이터 가져오기 실패:', err);
+      setTodayGames([]);
+    } finally {
+      setGamesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTeamRanks();
+    fetchTodayGames();
   }, []);
 
   // 승률 계산 (소수점 3자리까지)
@@ -49,6 +67,46 @@ const Home = () => {
   const formatStreak = (streak) => {
     if (!streak) return '-';
     return streak; // 이미 '2승', '1패' 등의 형태로 받아오므로 그대로 반환
+  };
+
+  // 경기 상태에 따른 배지 색상
+  const getStatusBadge = (game) => {
+    const statusCode = game.statusCode;
+    const statusInfo = game.statusInfo;
+
+    // statusInfo가 있으면 우선 사용
+    if (statusInfo) {
+      let color = 'bg-gray-100 text-gray-800';
+
+      if (statusInfo.includes('취소')) {
+        color = 'bg-red-100 text-red-800';
+      } else if (statusInfo.includes('연기')) {
+        color = 'bg-yellow-100 text-yellow-800';
+      } else if (statusInfo.includes('경기전') || statusInfo.includes('예정')) {
+        color = 'bg-blue-100 text-blue-800';
+      } else if (statusInfo.includes('회')) {
+        color = 'bg-red-100 text-red-800';
+      }
+
+      return { text: statusInfo, color };
+    }
+
+    // statusInfo가 없으면 기존 로직 사용
+    const statusMap = {
+      'BEFORE': { text: '예정', color: 'bg-blue-100 text-blue-800' },
+      'READY': { text: '경기 준비중', color: 'bg-green-100 text-green-800' },
+      'LIVE': { text: '진행중', color: 'bg-red-100 text-red-800' },
+      'RESULT': { text: '종료', color: 'bg-gray-100 text-gray-800' },
+      'POSTPONED': { text: '연기', color: 'bg-yellow-100 text-yellow-800' },
+      'CANCELLED': { text: '취소', color: 'bg-red-100 text-red-800' }
+    };
+    return statusMap[statusCode] || { text: statusCode, color: 'bg-gray-100 text-gray-800' };
+  };
+
+  // 시간 포맷팅
+  const formatTime = (dateTime) => {
+    if (!dateTime) return '';
+    return dateTime.slice(11, 16);
   };
 
   return (
@@ -152,6 +210,106 @@ const Home = () => {
             )}
           </div>
 
+          {/* 오늘 경기 목록 */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                ⚾ 오늘의 경기
+              </h2>
+              <button
+                onClick={fetchTodayGames}
+                disabled={gamesLoading}
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium"
+              >
+                {gamesLoading ? '새로고침 중...' : '새로고침'}
+              </button>
+            </div>
+
+            {gamesLoading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p className="mt-2 text-gray-600">오늘 경기를 불러오는 중...</p>
+              </div>
+            ) : todayGames.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {todayGames.map((game) => {
+                  const statusBadge = getStatusBadge(game);
+                  const isLive = game.statusCode === 'LIVE' || (game.statusInfo && game.statusInfo.includes('회'));
+                  const isFinished = game.statusCode === 'FINISHED' || game.statusCode === 'RESULT';
+
+                  return (
+                    <div
+                      key={game.gameId}
+                      className={`bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md ${isLive && !isFinished ? 'ring-2 ring-red-500' : ''}`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">⚾</span>
+                          <span className="text-sm text-gray-500">
+                            {formatTime(game.gameDateTime)} · {game.stadium}
+                          </span>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                          {statusBadge.text}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 text-center">
+                          <div className="text-sm font-medium text-gray-800 mb-1">
+                            {game.awayTeamName}
+                          </div>
+                          <div className={`text-xl font-bold ${isFinished || isLive ? 'text-blue-600' : 'text-gray-400'}`}>
+                            {game.awayTeamScore ?? '-'}
+                          </div>
+                        </div>
+
+                        <div className="mx-3 text-gray-400 font-bold text-sm">
+                          VS
+                        </div>
+
+                        <div className="flex-1 text-center">
+                          <div className="text-sm font-medium text-gray-800 mb-1">
+                            {game.homeTeamName}
+                          </div>
+                          <div className={`text-xl font-bold ${isFinished || isLive ? 'text-blue-600' : 'text-gray-400'}`}>
+                            {game.homeTeamScore ?? '-'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3 text-xs text-gray-600">
+                        <div className="flex items-center space-x-2">
+                          {game.broadChannel && (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-red-500">📺</span>
+                              <span>{game.broadChannel}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {isLive && !isFinished && (
+                            <div className="flex items-center space-x-1 text-red-500">
+                              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                              <span className="font-medium">LIVE</span>
+                            </div>
+                          )}
+                          {isFinished && (
+                            <span className="text-gray-500 font-medium">종료</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                오늘 예정된 경기가 없습니다.
+              </div>
+            )}
+          </div>
+
           {/* KBO 팀 순위 표 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -231,12 +389,12 @@ const Home = () => {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${team.streak && team.streak.includes('승')
-                              ? 'bg-green-100 text-green-800'
-                              : team.streak && team.streak.includes('패')
-                                ? 'bg-red-100 text-red-800'
-                                : team.streak && team.streak.includes('무')
-                                  ? 'bg-gray-100 text-gray-800'
-                                  : 'bg-gray-100 text-gray-600'
+                            ? 'bg-green-100 text-green-800'
+                            : team.streak && team.streak.includes('패')
+                              ? 'bg-red-100 text-red-800'
+                              : team.streak && team.streak.includes('무')
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-gray-100 text-gray-600'
                             }`}>
                             {formatStreak(team.streak)}
                           </span>

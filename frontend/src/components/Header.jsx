@@ -9,11 +9,12 @@ const Header = () => {
 
   const navigationItems = [
     { path: '/', label: '홈' },
+    { path: '/games', label: '경기일정' },
     { path: '/rankings', label: '선수정보' },
     { path: '/predictions', label: '승부예측' },
     { path: '/chat', label: '실시간채팅' },
     { path: '/chatbot', label: 'AI챗봇' },
-    { path: '/commentary-demo', label: '중계방(테스트)' }
+    { path: '/commentary-demo', label: '중계방(테스트)' },
   ];
 
   return (

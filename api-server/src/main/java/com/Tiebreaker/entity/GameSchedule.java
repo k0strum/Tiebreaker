@@ -53,6 +53,9 @@ public class GameSchedule {
   @Column(name = "status_code", length = 16)
   private String statusCode; // BEFORE, LIVE, RESULT, READY
 
+  @Column(name = "status_info", length = 32)
+  private String statusInfo; // 경기 진행 상황 (예: "경기전", "9회말", "경기취소")
+
   @Column(name = "winner", length = 8)
   private String winner; // HOME, AWAY, DRAW
 

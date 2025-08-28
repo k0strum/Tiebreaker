@@ -85,9 +85,9 @@ def initialize_schedulers_once():
             logging.info("Kafka 연결 테스트 성공")
             
             # 스케줄러 시작
-            team_rank_scheduler = schedule_team_rank_collection()
-            player_scheduler = schedule_player_collection()
-            game_schedule_weekly_scheduler, game_schedule_daily_scheduler = run_both_schedulers()
+            team_rank_scheduler = schedule_team_rank_collection() # 팀 랭킹
+            player_scheduler = schedule_player_collection() # 선수 데이터
+            game_schedule_weekly_scheduler, game_schedule_daily_scheduler = run_both_schedulers() # 경기 스케줄
             
             _schedulers_initialized = True
             logging.info("모든 스케줄러가 성공적으로 시작되었습니다.")
