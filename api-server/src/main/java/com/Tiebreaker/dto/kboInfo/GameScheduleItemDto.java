@@ -24,6 +24,7 @@ public class GameScheduleItemDto {
   private Integer awayTeamScore;
 
   private String statusCode; // BEFORE, LIVE, RESULT, READY
+  private String statusInfo; // 경기 진행 상황 (예: "경기전", "9회말", "경기취소")
   private String winner; // HOME, AWAY, DRAW
 
   private Boolean suspended; // 경기 중단 여부

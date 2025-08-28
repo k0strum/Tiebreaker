@@ -61,6 +61,7 @@ public class GameScheduleConsumer {
     e.setAwayTeamName(dto.getAwayTeamName());
     e.setAwayTeamScore(dto.getAwayTeamScore());
     e.setStatusCode(dto.getStatusCode());
+    e.setStatusInfo(dto.getStatusInfo()); // statusInfo 추가
     e.setWinner(dto.getWinner());
     e.setSuspended(dto.getSuspended());
     e.setBroadChannel(dto.getBroadChannel());

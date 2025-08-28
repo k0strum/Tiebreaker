@@ -103,6 +103,7 @@ def collect_game_schedule():
                 'awayTeamName': g.get('awayTeamName', ''),
                 'awayTeamScore': g.get('awayTeamScore', 0),
                 'statusCode': g.get('statusCode', ''),
+                'statusInfo': g.get('statusInfo', ''),  # 경기 진행 상황 추가
                 'winner': g.get('winner', ''),
                 'suspended': g.get('suspended', False),
                 'broadChannel': g.get('broadChannel', ''),
