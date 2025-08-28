@@ -16,6 +16,8 @@ import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
 import CommentaryDemo from './pages/CommentaryDemo.jsx'
 import GameSchedule from './pages/GameSchedule.jsx'
+import LiveGames from './pages/LiveGames.jsx'
+import LiveGame from './pages/LiveGame.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 import SignupComplete from './pages/auth/SignupComplete.jsx'
@@ -51,6 +53,8 @@ const AppContent = () => {
           <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/commentary-demo" element={<CommentaryDemo />} />
           <Route path="/games" element={<GameSchedule />} />
+          <Route path="/live-games" element={<LiveGames />} />
+          <Route path="/live-game/:gameId" element={<LiveGame />} />
         </Routes>
       </main>
     </div>
