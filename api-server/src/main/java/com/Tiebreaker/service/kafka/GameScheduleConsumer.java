@@ -1,17 +1,14 @@
 package com.Tiebreaker.service.kafka;
 
-import com.Tiebreaker.dto.kboInfo.GameScheduleItemDto;
+import com.Tiebreaker.dto.livegame.GameScheduleItemDto;
 import com.Tiebreaker.dto.kboInfo.GameScheduleMessageDto;
-import com.Tiebreaker.entity.GameSchedule;
+import com.Tiebreaker.entity.livegame.GameSchedule;
 import com.Tiebreaker.repository.GameScheduleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor

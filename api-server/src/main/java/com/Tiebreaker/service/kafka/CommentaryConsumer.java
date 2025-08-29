@@ -1,8 +1,8 @@
 package com.Tiebreaker.service.kafka;
 
-import com.Tiebreaker.dto.commentary.CommentaryEvent;
-import com.Tiebreaker.entity.Commentary;
-import com.Tiebreaker.service.CommentaryService;
+import com.Tiebreaker.dto.livegame.CommentaryEvent;
+import com.Tiebreaker.entity.livegame.Commentary;
+import com.Tiebreaker.service.livegame.CommentaryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ public class CommentaryConsumer {
   private final CommentaryService commentaryService;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = "commentary", groupId = "tiebreaker-commentary")
+  @KafkaListener(topics = "livegame", groupId = "tiebreaker-livegame")
   public void onMessage(String message) {
     try {
       CommentaryEvent event = objectMapper.readValue(message, CommentaryEvent.class);
@@ -26,7 +26,7 @@ public class CommentaryConsumer {
     } catch (JsonProcessingException e) {
       System.err.println("❌ Error parsing - Commentary JSON String: " + e.getMessage());
     } catch (Exception e) {
-      System.err.println("❌ Error processing commentary event: " + e.getMessage());
+      System.err.println("❌ Error processing livegame event: " + e.getMessage());
     }
   }
 }

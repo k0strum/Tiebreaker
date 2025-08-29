@@ -8,6 +8,7 @@ const Home = () => {
   const { isLoggedIn, nickname, email, role, profileImg, memberId, isAdmin, loginType, logout } = useAuth();
   const [teamRanks, setTeamRanks] = useState([]);
   const [todayGames, setTodayGames] = useState([]);
+  const [liveRoomStatus, setLiveRoomStatus] = useState({});
   const [loading, setLoading] = useState(false);
   const [gamesLoading, setGamesLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -53,10 +54,37 @@ const Home = () => {
     }
   };
 
+  // 실시간 중계방 상태 확인
+  const fetchLiveRoomStatus = async (gameIds) => {
+    if (gameIds.length === 0) return;
+
+    try {
+      const response = await axios.post('/live-games/status', gameIds);
+      setLiveRoomStatus(response.data);
+    } catch (err) {
+      console.error('실시간 중계방 상태 확인 실패:', err);
+    }
+  };
+
   useEffect(() => {
     fetchTeamRanks();
     fetchTodayGames();
   }, []);
+
+  // 오늘 경기가 로드되면 실시간 중계방 상태 확인
+  useEffect(() => {
+    if (todayGames.length > 0) {
+      const gameIds = todayGames.map(game => game.gameId);
+      fetchLiveRoomStatus(gameIds);
+
+      // 1분마다 실시간 중계방 상태 업데이트 (서버 부하 감소)
+      const interval = setInterval(() => {
+        fetchLiveRoomStatus(gameIds);
+      }, 60000);
+
+      return () => clearInterval(interval);
+    }
+  }, [todayGames]);
 
   // 승률 계산 (소수점 3자리까지)
   const formatWinRate = (winRate) => {
@@ -217,7 +245,13 @@ const Home = () => {
                 ⚾ 오늘의 경기
               </h2>
               <button
-                onClick={fetchTodayGames}
+                onClick={() => {
+                  fetchTodayGames();
+                  if (todayGames.length > 0) {
+                    const gameIds = todayGames.map(game => game.gameId);
+                    fetchLiveRoomStatus(gameIds);
+                  }
+                }}
                 disabled={gamesLoading}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium"
               >
@@ -236,11 +270,19 @@ const Home = () => {
                   const statusBadge = getStatusBadge(game);
                   const isLive = game.statusCode === 'LIVE' || (game.statusInfo && game.statusInfo.includes('회'));
                   const isFinished = game.statusCode === 'FINISHED' || game.statusCode === 'RESULT';
+                  const hasLiveRoom = liveRoomStatus[game.gameId] || false;
 
                   return (
                     <div
                       key={game.gameId}
-                      className={`bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md ${isLive && !isFinished ? 'ring-2 ring-red-500' : ''}`}
+                      className={`bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md ${isLive && !isFinished ? 'ring-2 ring-red-500' :
+                        hasLiveRoom ? 'ring-2 ring-green-500 cursor-pointer hover:bg-green-50' : ''
+                        }`}
+                      onClick={() => {
+                        if (hasLiveRoom) {
+                          window.open(`/live-game/${game.gameId}`, '_blank');
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
@@ -249,9 +291,16 @@ const Home = () => {
                             {formatTime(game.gameDateTime)} · {game.stadium}
                           </span>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                          {statusBadge.text}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                            {statusBadge.text}
+                          </span>
+                          {hasLiveRoom && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              🎥 중계방
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between">

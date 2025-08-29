@@ -96,7 +96,7 @@ class CommentaryCollector:
 ### 3.2 Kafka Consumer (CommentaryConsumer.java)
 
 ```java
-@KafkaListener(topics = "commentary", groupId = "tiebreaker-commentary")
+@KafkaListener(topics = "livegame", groupId = "tiebreaker-livegame")
 public void onMessage(String message) {
     try {
         // 1. JSON 문자열을 DTO로 파싱
@@ -158,7 +158,7 @@ public class CommentaryService {
             try {
                 // SSE 이벤트 전송
                 emitter.send(SseEmitter.event()
-                    .name("commentary")
+                    .name("livegame")
                     .data(Map.of(
                         "gameId", c.getGameId(),
                         "ts", c.getTs(),
@@ -192,7 +192,7 @@ public class CommentaryService {
 public class CommentaryController {
 
     // REST API: 최근 해설 조회
-    @GetMapping("/games/{gameId}/commentary")
+    @GetMapping("/games/{gameId}/livegame")
     public Page<Commentary> list(
         @PathVariable String gameId,
         @RequestParam(defaultValue = "0") int page,
@@ -201,7 +201,7 @@ public class CommentaryController {
     }
 
     // SSE 엔드포인트: 실시간 스트림 구독
-    @GetMapping(value = "/sse/games/{gameId}/commentary", produces = "text/event-stream")
+    @GetMapping(value = "/sse/games/{gameId}/livegame", produces = "text/event-stream")
     public SseEmitter sse(@PathVariable String gameId) {
         return commentaryService.subscribe(gameId);
     }

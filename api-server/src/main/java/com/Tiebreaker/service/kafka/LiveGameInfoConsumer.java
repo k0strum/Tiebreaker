@@ -1,8 +1,8 @@
 package com.Tiebreaker.service.kafka;
 
-import com.Tiebreaker.dto.kboInfo.LiveGameInfoDto;
+import com.Tiebreaker.dto.livegame.LiveGameInfoDto;
 import com.Tiebreaker.entity.LiveGameInfo;
-import com.Tiebreaker.service.LiveGameInfoService;
+import com.Tiebreaker.service.livegame.LiveGameInfoService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

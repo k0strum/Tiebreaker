@@ -1,6 +1,6 @@
-package com.Tiebreaker.service;
+package com.Tiebreaker.service.livegame;
 
-import com.Tiebreaker.dto.kboInfo.LiveGameInfoDto;
+import com.Tiebreaker.dto.livegame.LiveGameInfoDto;
 import com.Tiebreaker.entity.LiveGameInfo;
 import com.Tiebreaker.repository.LiveGameInfoRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,6 +55,90 @@ public class LiveGameInfoService {
 
   public List<LiveGameInfo> getLiveGames() {
     return liveGameInfoRepository.findByStatusIn(Arrays.asList("READY", "LIVE"));
+  }
+
+  /**
+   * 경기 스케줄에 따라 초기 방을 생성합니다 (READY 상태)
+   */
+  public void createInitialRoom(String gameId, String homeTeam, String awayTeam) {
+    try {
+      // 입력값 검증
+      if (gameId == null || gameId.trim().isEmpty()) {
+        log.error("gameId가 null이거나 비어있습니다.");
+        return;
+      }
+      if (homeTeam == null || awayTeam == null) {
+        log.error("팀명이 null입니다. gameId: {}, homeTeam: {}, awayTeam: {}", gameId, homeTeam, awayTeam);
+        return;
+      }
+
+      // 이미 방이 존재하는지 확인
+      Optional<LiveGameInfo> existing = getLatestByGameId(gameId);
+      if (existing.isPresent()) {
+        LiveGameInfo existingRoom = existing.get();
+        // READY 또는 LIVE 상태인 경우만 중복 생성 방지
+        if ("READY".equals(existingRoom.getStatus()) || "LIVE".equals(existingRoom.getStatus())) {
+          log.info("방이 이미 존재합니다: {} (상태: {})", gameId, existingRoom.getStatus());
+          return;
+        }
+      }
+
+      // 초기 방 생성 (READY 상태)
+      LiveGameInfo initialRoom = LiveGameInfo.builder()
+          .gameId(gameId)
+          .status("READY")
+          .inning(0)
+          .half("T")
+          .homeScore(0)
+          .awayScore(0)
+          .homeTeam(homeTeam)
+          .awayTeam(awayTeam)
+          .currentBatter("")
+          .currentPitcher("")
+          .bases("[false,false,false]")
+          .outs(0)
+          .balls(0)
+          .strikes(0)
+          .timestamp(System.currentTimeMillis())
+          .build();
+
+      liveGameInfoRepository.save(initialRoom);
+      log.info("초기 방 생성 완료: {} - {} vs {}", gameId, homeTeam, awayTeam);
+    } catch (Exception e) {
+      log.error("방 생성 중 오류 발생: gameId={}, homeTeam={}, awayTeam={}, error={}",
+          gameId, homeTeam, awayTeam, e.getMessage(), e);
+    }
+  }
+
+  /**
+   * 경기 종료 후 방을 정리합니다
+   */
+  public void cleanupRoom(String gameId) {
+    // SSE 연결된 사용자들에게 방 종료 알림
+    Set<SseEmitter> emitters = emitterByGame.getOrDefault(gameId, Collections.emptySet());
+    List<SseEmitter> toRemove = new ArrayList<>();
+
+    for (SseEmitter emitter : emitters) {
+      try {
+        Map<String, Object> data = new HashMap<>();
+        data.put("gameId", gameId);
+        data.put("status", "FINISHED");
+        data.put("message", "경기가 종료되었습니다.");
+
+        emitter.send(SseEmitter.event()
+            .name("room-closed")
+            .data(data));
+      } catch (IOException | IllegalStateException e) {
+        toRemove.add(emitter);
+      }
+    }
+
+    toRemove.forEach(em -> removeEmitter(gameId, em));
+
+    // 방 정보 삭제 (선택사항 - 로그 보존을 위해 주석 처리)
+    // liveGameInfoRepository.deleteByGameId(gameId);
+
+    log.info("방 정리 완료: {}", gameId);
   }
 
   public SseEmitter subscribe(String gameId) {

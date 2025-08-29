@@ -1,6 +1,6 @@
-package com.Tiebreaker.service;
+package com.Tiebreaker.service.livegame;
 
-import com.Tiebreaker.entity.GameSchedule;
+import com.Tiebreaker.entity.livegame.GameSchedule;
 import com.Tiebreaker.repository.GameScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.Tiebreaker.controller.commentary;
 
-import com.Tiebreaker.entity.Commentary;
-import com.Tiebreaker.service.CommentaryService;
+import com.Tiebreaker.entity.livegame.Commentary;
+import com.Tiebreaker.service.livegame.CommentaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ public class CommentaryController {
 
   private final CommentaryService commentaryService;
 
-  @GetMapping("/games/{gameId}/commentary")
+  @GetMapping("/games/{gameId}/livegame")
   public Page<Commentary> list(
       @PathVariable String gameId,
       @RequestParam(defaultValue = "0") int page,
@@ -22,7 +22,7 @@ public class CommentaryController {
     return commentaryService.listRecent(gameId, page, size);
   }
 
-  @GetMapping(value = "/sse/games/{gameId}/commentary", produces = "text/event-stream")
+  @GetMapping(value = "/sse/games/{gameId}/livegame", produces = "text/event-stream")
   public SseEmitter sse(@PathVariable String gameId) {
     return commentaryService.subscribe(gameId);
   }

@@ -1,7 +1,7 @@
-package com.Tiebreaker.service;
+package com.Tiebreaker.service.livegame;
 
-import com.Tiebreaker.dto.commentary.CommentaryEvent;
-import com.Tiebreaker.entity.Commentary;
+import com.Tiebreaker.dto.livegame.CommentaryEvent;
+import com.Tiebreaker.entity.livegame.Commentary;
 import com.Tiebreaker.repository.CommentaryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -65,7 +65,7 @@ public class CommentaryService {
     for (SseEmitter emitter : emitters) {
       try {
         emitter.send(SseEmitter.event()
-            .name("commentary")
+            .name("livegame")
             .data(Map.of(
                 "gameId", c.getGameId(),
                 "ts", c.getTs(),
