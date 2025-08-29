@@ -1,4 +1,4 @@
-package com.Tiebreaker.dto.kboInfo;
+package com.Tiebreaker.dto.livegame;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;

@@ -396,9 +396,17 @@ const LiveGame = () => {
           </div>
           <div className="max-h-80 overflow-y-auto space-y-3 pr-2">
             {chatMessages.map((m, idx) => (
-              <div key={idx} className="text-sm text-gray-800">
-                <span className="font-semibold text-gray-700 mr-2">{m.sender ?? '익명'}</span>
-                <span>{m.content}</span>
+              <div key={idx} className={`text-sm ${m.type === 'NOTIFICATION' ? 'text-center' : 'text-gray-800'}`}>
+                {m.type === 'NOTIFICATION' ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <span className="text-blue-800 font-medium">{m.content}</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="font-semibold text-gray-700 mr-2">{m.sender ?? '익명'}</span>
+                    <span>{m.content}</span>
+                  </>
+                )}
               </div>
             ))}
             <div ref={chatEndRef} />

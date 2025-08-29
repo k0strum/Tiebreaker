@@ -1,4 +1,4 @@
-package com.Tiebreaker.entity;
+package com.Tiebreaker.entity.livegame;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

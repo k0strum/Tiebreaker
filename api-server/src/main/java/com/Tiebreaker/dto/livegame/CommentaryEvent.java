@@ -1,4 +1,4 @@
-package com.Tiebreaker.dto.commentary;
+package com.Tiebreaker.dto.livegame;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;

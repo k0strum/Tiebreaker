@@ -61,7 +61,8 @@ public class SecurityConfig {
                                 "/api/games/**", // 경기 일정 조회
                                 "/api/live-games/**", // live-games 정보 조회
                                 "/ws/**", "/ws-native/**", "/sockjs-node/**", "/static/**", "/*.html", "/topic/**",
-                                "/app/**" // WebSocket/STOMP
+                                "/app/**", // WebSocket/STOMP
+                                "/mcp" // MCPServer
                         ).permitAll()
                         .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
                         .requestMatchers("/admin/**").hasRole("ADMIN")

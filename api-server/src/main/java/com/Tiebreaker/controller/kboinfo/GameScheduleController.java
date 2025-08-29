@@ -1,7 +1,7 @@
 package com.Tiebreaker.controller.kboinfo;
 
-import com.Tiebreaker.entity.GameSchedule;
-import com.Tiebreaker.service.GameScheduleService;
+import com.Tiebreaker.entity.livegame.GameSchedule;
+import com.Tiebreaker.service.livegame.GameScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

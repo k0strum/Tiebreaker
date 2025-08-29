@@ -1,14 +1,16 @@
 package com.Tiebreaker.controller.kboinfo;
 
 import com.Tiebreaker.entity.LiveGameInfo;
-import com.Tiebreaker.service.LiveGameInfoService;
+import com.Tiebreaker.service.livegame.LiveGameInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -43,5 +45,24 @@ public class LiveGameInfoController {
   public ResponseEntity<List<LiveGameInfo>> getLiveGames() {
     List<LiveGameInfo> liveGames = liveGameInfoService.getLiveGames();
     return ResponseEntity.ok(liveGames);
+  }
+
+  /**
+   * 실시간 중계방 상태 확인 (gameId 목록으로 조회)
+   */
+  @PostMapping("/status")
+  public ResponseEntity<Map<String, Boolean>> getLiveRoomStatus(@RequestBody List<String> gameIds) {
+    Map<String, Boolean> statusMap = new HashMap<>();
+
+    for (String gameId : gameIds) {
+      Optional<LiveGameInfo> liveGameInfo = liveGameInfoService.getLatestByGameId(gameId);
+      // READY, LIVE 상태인 경우에만 활성화
+      boolean isActive = liveGameInfo.isPresent() &&
+          (liveGameInfo.get().getStatus().equals("READY") ||
+              liveGameInfo.get().getStatus().equals("LIVE"));
+      statusMap.put(gameId, isActive);
+    }
+
+    return ResponseEntity.ok(statusMap);
   }
 }

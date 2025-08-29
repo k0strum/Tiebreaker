@@ -1,5 +1,6 @@
 package com.Tiebreaker.dto.kboInfo;
 
+import com.Tiebreaker.dto.livegame.GameScheduleItemDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

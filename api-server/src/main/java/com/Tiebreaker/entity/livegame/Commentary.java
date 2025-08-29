@@ -1,5 +1,6 @@
-package com.Tiebreaker.entity;
+package com.Tiebreaker.entity.livegame;
 
+import com.Tiebreaker.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "commentary", indexes = {
+@Table(name = "livegame", indexes = {
     @Index(name = "idx_commentary_game_ts", columnList = "gameId, ts")
 })
 public class Commentary extends BaseTimeEntity {

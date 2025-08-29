@@ -1,4 +1,4 @@
-package com.Tiebreaker.dto.kboInfo;
+package com.Tiebreaker.dto.livegame;
 
 import lombok.Data;
 
