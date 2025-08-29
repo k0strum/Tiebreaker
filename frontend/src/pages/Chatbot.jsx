@@ -19,9 +19,6 @@ function Chatbot() {
 
   // 도구 입력 상태
   const [playerName, setPlayerName] = useState('')
-  const [teamName, setTeamName] = useState('')
-  const [position, setPosition] = useState('')
-  const [playerId, setPlayerId] = useState('')
   const [date, setDate] = useState('')
 
   useEffect(() => {
@@ -94,12 +91,8 @@ function Chatbot() {
     callTool('getGameSchedule', args)
   }
   const handleGetPlayerStats = () => {
-    const args = {}
-    if (playerId && String(playerId).trim()) args.playerId = playerId
-    if (playerName && playerName.trim()) args.playerName = playerName.trim()
-    if (teamName && teamName.trim()) args.teamName = teamName.trim()
-    if (position && position.trim()) args.position = position.trim()
-    callTool('getPlayerStats', args)
+    if (!playerName.trim()) return
+    callTool('getPlayerStats', { playerName: playerName.trim() })
   }
 
   // 렌더링 유틸: 팀 순위
@@ -175,16 +168,20 @@ function Chatbot() {
       const list = content.candidates
       return (
         <div className="space-y-2">
-          <div className="font-semibold text-gray-800">후보가 여러 명입니다. playerId 또는 teamName/position을 지정해주세요.</div>
+          <div className="font-semibold text-gray-800">후보가 여러 명입니다. 선택하면 자동으로 재조회합니다.</div>
           <div className="space-y-2">
             {list.map((c, idx) => (
-              <div key={idx} className="border rounded p-2 text-sm flex items-center justify-between">
+              <button
+                key={idx}
+                onClick={() => callTool('getPlayerStats', { playerId: c.playerId })}
+                className="w-full text-left border rounded p-2 text-sm hover:bg-gray-50 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{c.playerName}</div>
                   <div className="text-gray-600">{c.teamName} · {c.position}</div>
                   <div className="text-gray-500">playerId: {c.playerId}</div>
                 </div>
-              </div>
+                <span className="text-xs text-gray-500">선택</span>
+              </button>
             ))}
           </div>
         </div>
@@ -340,45 +337,21 @@ function Chatbot() {
             <div className="text-sm font-medium text-gray-700">선수 조회</div>
             <input
               type="text"
-              value={playerId}
-              onChange={(e) => setPlayerId(e.target.value)}
-              placeholder="playerId (선택)"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-              disabled={!isConnected}
-            />
-            <input
-              type="text"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="playerName (선택/권장)"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-              disabled={!isConnected}
-            />
-            <input
-              type="text"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              placeholder="teamName (선택)"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-              disabled={!isConnected}
-            />
-            <input
-              type="text"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              placeholder="position (선택)"
+              placeholder="playerName (필수)"
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
               disabled={!isConnected}
             />
             <button
               onClick={handleGetPlayerStats}
-              disabled={!isConnected}
+              disabled={!isConnected || !playerName.trim()}
               className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400"
             >getPlayerStats</button>
           </div>
 
           <div className="text-xs text-gray-500">
-            요청/응답은 좌측 채팅 영역에 보기 좋은 카드/테이블로 표시됩니다. (원본 JSON은 폴백)
+            후보가 여러 명이면 리스트로 표시되며, 항목을 클릭하면 자동 재조회합니다.
           </div>
         </div>
       </div>
