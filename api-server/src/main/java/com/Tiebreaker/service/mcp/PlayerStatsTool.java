@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 /**
  * 선수 성적 조회 MCP 도구
- * 사용 예: "김현수 선수 올해 성적 어때?"
+ * 입력은 기본적으로 선수 이름만 받습니다. (동명이인인 경우 후보를 반환)
  */
 @Component
 public class PlayerStatsTool implements McpTool {
@@ -24,75 +24,47 @@ public class PlayerStatsTool implements McpTool {
   @Override
   public Object execute(Map<String, Object> arguments) {
     String playerName = arguments == null ? null : (String) arguments.get("playerName");
-    // 선택적 필터
-    String teamName = arguments == null ? null : (String) arguments.get("teamName");
-    String position = arguments == null ? null : (String) arguments.get("position");
-    Long playerId = extractPlayerId(arguments);
+    Long playerId = extractPlayerId(arguments); // 후보 클릭 재조회 용도
 
-    if ((playerName == null || playerName.trim().isEmpty()) && playerId == null) {
-      return Map.of(
-          "error", "선수 식별 정보가 필요합니다.",
-          "example", Map.of(
-              "byName",
-              Map.of("toolName", "getPlayerStats", "arguments", Map.of("playerName", "이승현", "teamName", "키움")),
-              "byId", Map.of("toolName", "getPlayerStats", "arguments", Map.of("playerId", 12345))));
-    }
-
-    // 1) playerId로 직접 조회가 오면 바로 상세 조회
+    // 1) playerId로 직접 재조회가 오면 상세만 반환
     if (playerId != null) {
       return buildDetailResponseByPlayerId(playerId);
     }
 
-    // 2) 이름으로 후보 검색
-    List<Player> candidates = playerService.searchPlayersByName(playerName);
+    // 2) 이름 기반 검색 (단일 입력 원칙)
+    if (playerName == null || playerName.trim().isEmpty()) {
+      return Map.of(
+          "error", "선수 이름이 필요합니다.",
+          "example", Map.of("toolName", "getPlayerStats", "arguments", Map.of("playerName", "이승현")));
+    }
+
+    String normalized = normalizeName(playerName);
+    List<Player> candidates = playerService.searchPlayersByName(normalized);
     if (candidates == null || candidates.isEmpty()) {
       return Map.of("error", "선수를 찾을 수 없습니다: " + playerName);
     }
 
-    // 3) 선택적 필터 적용 (teamName, position)
-    List<Player> filtered = candidates;
-    if (teamName != null && !teamName.isBlank()) {
-      filtered = filtered.stream()
-          .filter(p -> p.getTeamName() != null && p.getTeamName().equalsIgnoreCase(teamName))
-          .collect(Collectors.toList());
-    }
-    if (position != null && !position.isBlank()) {
-      filtered = filtered.stream()
-          .filter(p -> p.getPosition() != null && p.getPosition().toLowerCase().contains(position.toLowerCase()))
-          .collect(Collectors.toList());
-    }
+    // 정확 이름 매칭만 추출
+    List<Player> exactMatches = candidates.stream()
+        .filter(p -> p.getPlayerName() != null && p.getPlayerName().equalsIgnoreCase(normalized))
+        .collect(Collectors.toList());
 
-    // 4) 정확 일치 우선(이름), 그 다음 필터 결과
     Player chosen = null;
-    if (filtered != null && !filtered.isEmpty()) {
-      chosen = filtered.stream()
-          .filter(p -> p.getPlayerName() != null && p.getPlayerName().equalsIgnoreCase(playerName))
-          .findFirst()
-          .orElse(filtered.size() == 1 ? filtered.get(0) : null);
+    if (exactMatches.size() == 1) {
+      chosen = exactMatches.get(0);
+    } else if (exactMatches.size() > 1) {
+      // 동일 이름으로 다수 존재 → 후보 리스트 반환
+      return buildCandidateList(exactMatches, "동명이인이 여러 명입니다. 후보 중 하나를 선택해주세요.");
+    } else if (candidates.size() == 1) {
+      chosen = candidates.get(0);
+    } else {
+      // 이름 포함 검색 다수 → 후보 리스트 반환
+      return buildCandidateList(candidates, "여러 명이 검색되었습니다. 후보 중 하나를 선택해주세요.");
     }
 
-    // 5) 여전히 모호하면 후보 리스트 반환
-    if (chosen == null) {
-      // 후보 상위 N개만 요약 제공
-      List<?> candidateSummaries = candidates.stream()
-          .map(p -> Map.of(
-              "playerId", p.getId(),
-              "playerName", p.getPlayerName(),
-              "teamName", p.getTeamName(),
-              "position", p.getPosition()))
-          .distinct()
-          .limit(10)
-          .collect(Collectors.toList());
-
-      return Map.of(
-          "candidates", candidateSummaries,
-          "message", "여러 명이 검색되었습니다. playerId 또는 teamName/position 필터를 추가해주세요.");
-    }
-
-    // 6) 상세 조회 (시즌/월별 스탯 포함)
+    // 선택된 선수 상세 조회
     PlayerDetailResponseDto detail = playerService.getPlayerDetail(chosen.getId());
 
-    // 7) 타자/투수 분기하여 핵심 지표 구성
     Map<String, Object> stats;
     if (detail.getBatterStats() != null) {
       var b = detail.getBatterStats();
@@ -135,11 +107,30 @@ public class PlayerStatsTool implements McpTool {
         "message", message);
   }
 
+  private Object buildCandidateList(List<Player> list, String message) {
+    List<?> candidateSummaries = list.stream()
+        .map(p -> Map.of(
+            "playerId", p.getId(),
+            "playerName", p.getPlayerName(),
+            "teamName", p.getTeamName(),
+            "position", p.getPosition()))
+        .distinct()
+        .limit(10)
+        .collect(Collectors.toList());
+    return Map.of(
+        "candidates", candidateSummaries,
+        "message", message);
+  }
+
+  private String normalizeName(String name) {
+    if (name == null)
+      return null;
+    return name.trim();
+  }
+
   private Object buildDetailResponseByPlayerId(Long playerId) {
     try {
       PlayerDetailResponseDto detail = playerService.getPlayerDetail(playerId);
-      // 플레이어 기본 정보 추출이 필요하여 playerId로 역으로 검색
-      // 간단히 이름 검색으로 역매핑 시도 (레포에 단건 조회가 없다면)
       List<Player> byId = playerService.getAllPlayers().stream()
           .filter(p -> Objects.equals(p.getId(), playerId))
           .collect(Collectors.toList());
@@ -207,7 +198,7 @@ public class PlayerStatsTool implements McpTool {
 
   @Override
   public String getDescription() {
-    return "선수 이름 또는 playerId로 시즌 스탯(타자/투수)을 조회합니다. teamName/position 필터 지원.";
+    return "선수 이름으로 조회하고, 동명이인이 여러 명이면 후보를 반환합니다. 후보 선택 시 playerId로 재조회하세요.";
   }
 
   @Override
