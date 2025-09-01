@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +22,28 @@ public class GameScheduleTool implements McpTool {
   @Autowired
   private GameScheduleService scheduleService;
 
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
   @Override
   public Object execute(Map<String, Object> arguments) {
     String argDate = arguments == null ? null : (String) arguments.get("date");
-    String date = (argDate == null || argDate.isBlank()) ? LocalDate.now().toString() : argDate;
+    
+    // 날짜 검증 및 기본값 설정
+    String date;
+    if (argDate == null || argDate.isBlank()) {
+      date = LocalDate.now().toString();
+    } else {
+      try {
+        // 날짜 형식 검증
+        LocalDate.parse(argDate, DATE_FORMATTER);
+        date = argDate;
+      } catch (DateTimeParseException e) {
+        return Map.of(
+            "error", "잘못된 날짜 형식입니다.",
+            "detail", "날짜는 YYYY-MM-DD 형식으로 입력해주세요. (예: 2024-08-15)",
+            "inputDate", argDate);
+      }
+    }
 
     try {
       List<GameSchedule> schedules = (argDate == null || argDate.isBlank())

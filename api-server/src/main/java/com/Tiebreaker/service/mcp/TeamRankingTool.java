@@ -22,11 +22,21 @@ public class TeamRankingTool implements McpTool {
   public Object execute(Map<String, Object> arguments) {
     try {
       List<CurrentTeamRankResponseDto> ranks = teamService.getTeamRank();
+      
+      if (ranks == null) {
+        return Map.of(
+            "error", "팀 순위 데이터를 가져올 수 없습니다.",
+            "detail", "서비스에서 null 응답을 받았습니다.");
+      }
+      
       return Map.of(
-          "count", ranks != null ? ranks.size() : 0,
-          "ranks", ranks);
+          "count", ranks.size(),
+          "ranks", ranks,
+          "message", "현재 시즌 팀 순위입니다.");
     } catch (Exception e) {
-      return Map.of("error", "팀 순위 조회 중 오류: " + e.getMessage());
+      return Map.of(
+          "error", "팀 순위 조회 중 오류가 발생했습니다.",
+          "detail", e.getMessage());
     }
   }
 

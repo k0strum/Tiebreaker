@@ -34,18 +34,28 @@ public class McpServer extends TextWebSocketHandler {
     try {
       McpMessage hello = new McpMessage("hello", "MCP server ready");
       session.sendMessage(new TextMessage(objectMapper.writeValueAsString(hello)));
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      // 연결 실패 시 세션 제거
+      sessions.remove(session.getId());
     }
+  }
+
+  @Override
+  public void afterConnectionClosed(WebSocketSession session, org.springframework.web.socket.CloseStatus status) {
+    sessions.remove(session.getId());
   }
 
   @Override
   protected void handleTextMessage(WebSocketSession session, TextMessage message) {
     long start = System.currentTimeMillis();
+    String requestId = null;
     try {
       McpRequest request = objectMapper.readValue(message.getPayload(), McpRequest.class);
+      requestId = request != null ? request.getRequestId() : null;
+      
       if (request == null || !request.isValid()) {
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(
-            McpResponse.invalidArguments(null, "유효하지 않은 요청"))));
+            McpResponse.invalidArguments(requestId, "유효하지 않은 요청"))));
         return;
       }
 
@@ -78,8 +88,10 @@ public class McpServer extends TextWebSocketHandler {
     } catch (Exception e) {
       try {
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(
-            McpResponse.error(null, "요청 처리 중 오류: " + e.getMessage()))));
-      } catch (Exception ignored) {
+            McpResponse.error(requestId, "요청 처리 중 오류: " + e.getMessage()))));
+      } catch (Exception sendException) {
+        // 로깅 추가
+        System.err.println("응답 전송 실패: " + sendException.getMessage());
       }
     }
   }

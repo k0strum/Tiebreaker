@@ -24,9 +24,9 @@ public class PlayerStatsTool implements McpTool {
   @Override
   public Object execute(Map<String, Object> arguments) {
     String playerName = arguments == null ? null : (String) arguments.get("playerName");
-    Long playerId = extractPlayerId(arguments); // 후보 클릭 재조회 용도
+    Long playerId = extractPlayerId(arguments);
 
-    // 1) playerId로 직접 재조회가 오면 상세만 반환
+    // 1) playerId로 직접 재조회가 오면 상세만 반환 (playerName 무시)
     if (playerId != null) {
       return buildDetailResponseByPlayerId(playerId);
     }
