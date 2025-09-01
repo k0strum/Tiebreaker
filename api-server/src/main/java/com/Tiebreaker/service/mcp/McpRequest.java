@@ -45,12 +45,7 @@ public class McpRequest {
   @JsonProperty("requestId")
   private String requestId;
 
-  /**
-   * 세션 ID (선택적)
-   * 사용자별 세션 관리용
-   */
-  @JsonProperty("sessionId")
-  private String sessionId;
+  // 세션 ID 필드 제거 - 현재 사용되지 않음
 
   /**
    * 도구 호출 요청 생성
@@ -78,12 +73,25 @@ public class McpRequest {
    * 요청 유효성 검사
    */
   public boolean isValid() {
+    // 기본 필수 필드 검증
     if (type == null || type.trim().isEmpty()) {
       return false;
     }
+    
+    if (requestId == null || requestId.trim().isEmpty()) {
+      return false;
+    }
 
+    // 도구 호출 시 추가 검증
     if ("tool/call".equals(type)) {
-      return toolName != null && !toolName.trim().isEmpty();
+      if (toolName == null || toolName.trim().isEmpty()) {
+        return false;
+      }
+      
+      // arguments가 null이 아닌 경우 Map 타입인지 확인
+      if (arguments != null && !(arguments instanceof Map)) {
+        return false;
+      }
     }
 
     return true;

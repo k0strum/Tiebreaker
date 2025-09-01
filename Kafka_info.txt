@@ -11,6 +11,7 @@ cd C:\Kafka\kafka_2.13-3.9.1
 bin\windows\kafka-server-start.bat config\server.properties
 
 # 새 창에서 토픽 생성 (카프카 첫 구동 시 실행)
+cd C:\Kafka\kafka_2.13-3.9.1
 bin\windows\kafka-topics.bat --create --topic kbo-player-yearly --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 bin\windows\kafka-topics.bat --create --topic kbo-player-monthly --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 bin\windows\kafka-topics.bat --create --topic kbo-team-rank-data --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1

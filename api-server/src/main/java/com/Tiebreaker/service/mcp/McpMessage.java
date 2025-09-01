@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 /**
  * MCP 기본 메시지 클래스
  * 모든 MCP 통신의 기본이 되는 메시지 구조
+ * 
+ * 현재 McpServer에서는 McpRequest/McpResponse를 사용하므로
+ * 이 클래스는 향후 확장성을 위해 유지됩니다.
  */
 @Data
 @NoArgsConstructor
