@@ -44,6 +44,21 @@ const LiveGames = () => {
     return `${inning}회${halfText}`;
   };
 
+  const startSimulation = async () => {
+    try {
+      const res = await axios.post('http://localhost:5000/api/simulator/start');
+      const msg = res?.data?.message || '시뮬레이터 시작';
+      alert(msg);
+    } catch (e) {
+      if (e?.response?.status === 409) {
+        alert(e?.response?.data?.message || '시뮬레이터가 이미 실행 중입니다.');
+      } else {
+        console.error('시뮬레이터 시작 실패:', e);
+        alert('시뮬레이터 실행 요청 실패');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -144,7 +159,13 @@ const LiveGames = () => {
           </div>
         )}
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex justify-center space-x-3">
+          <button
+            onClick={startSimulation}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+          >
+            시뮬레이션 시작
+          </button>
           <button
             onClick={fetchLiveGames}
             className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"

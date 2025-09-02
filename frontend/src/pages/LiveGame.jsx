@@ -43,7 +43,7 @@ const LiveGame = () => {
 
     // SSE 연결
     const eventSource = new EventSource(`/api/live-games/${gameId}/subscribe`);
-    const commentarySource = new EventSource(`/api/sse/games/${gameId}/commentary`);
+    const commentarySource = new EventSource(`/api/sse/games/${gameId}/livegame`);
 
     eventSource.onopen = () => {
       console.log('SSE 연결 성공');
@@ -77,9 +77,10 @@ const LiveGame = () => {
     commentarySource.addEventListener('init', (event) => {
       console.log('Commentary SSE 초기화 완료:', event.data);
     });
-    commentarySource.addEventListener('commentary', (event) => {
+    commentarySource.addEventListener('livegame', (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('Commentary SSE 데이터 수신:', data);
         setCommentaries((prev) => (
           [...prev, {
             ts: data.ts,
@@ -180,7 +181,7 @@ const LiveGame = () => {
 
   const fetchCommentary = async () => {
     try {
-      const res = await axios.get(`/api/games/${gameId}/commentary`, { params: { page: 0, size: 50 } });
+      const res = await axios.get(`/api/games/${gameId}/livegame`, { params: { page: 0, size: 50 } });
       const items = res.data.content || [];
       // 서버는 최신 내림차순으로 반환 -> 화면은 오래된 → 최신(아래) 순으로 변환
       const mapped = items

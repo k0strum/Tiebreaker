@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 "/api/members/login", // 로그인
                                 "/api/members/images/**", // 프로필 이미지 서빙
                                 "/api/email/verify",
+                                "/api/email/resend", // 인증 이메일 재발송 (비로그인 허용)
                                 "/api/oauth/**", // OAuth 관련 API
                                 "/oauth2/authorization/**", // 소셜 로그인 시작
                                 "/login/oauth2/code/**", // 소셜 로그인 콜백

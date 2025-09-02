@@ -67,7 +67,7 @@ const PlayerSearch = memo(({ playerIndex, onPlayerSelect }) => {
           value={searchQuery}
           onChange={(e) => { setSearchQuery(e.target.value); setShowSearchDropdown(true); }}
           onFocus={() => setShowSearchDropdown(true)}
-          placeholder="선수명 또는 팀명으로 검색..."
+          placeholder="선수명 검색..."
           className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {showSearchDropdown && searchResults.length > 0 && (
@@ -437,7 +437,7 @@ function PlayerStats() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <span className="text-3xl">{ranking.icon}</span>
-            <h2 className="text-2xl font-bold text-gray-800">{ranking.name} 순위</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{ranking.name} TOP 10</h2>
           </div>
           <button
             onClick={() => setSelectedRanking(null)}
@@ -500,7 +500,7 @@ function PlayerStats() {
         </div>
 
         <div className="mt-4 text-sm text-gray-500 text-center">
-          상위 10명 표시 • 실시간 업데이트
+          상위 10명 표시
         </div>
       </div>
     );
@@ -508,7 +508,7 @@ function PlayerStats() {
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold text-blue-600 mb-6">📊 선수 기록실</h1>
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">📊 선수 기록실</h1><br />
 
       {/* 검색 영역 */}
       <PlayerSearch

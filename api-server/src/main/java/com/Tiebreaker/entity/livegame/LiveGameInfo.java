@@ -1,5 +1,6 @@
-package com.Tiebreaker.entity;
+package com.Tiebreaker.entity.livegame;
 
+import com.Tiebreaker.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
