@@ -1,6 +1,6 @@
-package com.Tiebreaker.controller.kboinfo;
+package com.Tiebreaker.controller.commentary;
 
-import com.Tiebreaker.entity.LiveGameInfo;
+import com.Tiebreaker.entity.livegame.LiveGameInfo;
 import com.Tiebreaker.service.livegame.LiveGameInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

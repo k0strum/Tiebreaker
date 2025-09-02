@@ -33,7 +33,7 @@ def schedule_team_rank_collection():
     scheduler.add_job(collect_and_send, 'cron', hour=4, minute=0, id='player_collection')
     
     # 즉시 첫 번째 실행
-#     collect_and_send()
+    collect_and_send()
     
     # 스케줄러 시작
     scheduler.start()

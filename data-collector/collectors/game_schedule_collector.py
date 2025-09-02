@@ -2,6 +2,7 @@ import time
 import requests
 import logging
 import json
+import calendar
 from datetime import datetime, timedelta
 
 # 팀 코드를 팀명으로 변환하는 매핑
@@ -46,47 +47,97 @@ def is_valid_kbo_game(game_info):
     
     return True
 
+def _fetch_games(from_date: str, to_date: str) -> list:
+    """
+    주어진 날짜 구간에 대해 Naver games API를 호출해 원시 game 리스트를 반환합니다.
+
+    Args:
+        from_date (str): 'YYYY-MM-DD'
+        to_date (str): 'YYYY-MM-DD'
+
+    Returns:
+        list: games 배열 (빈 배열 가능)
+    """
+    api_url = (
+        'https://api-gw.sports.naver.com/schedule/games'
+        f'?fields=basic%2Cschedule%2Cbaseball&upperCategoryId=kbaseball&categoryId=kbo'
+        f'&fromDate={from_date}&toDate={to_date}&roundCodes=&size=500'
+    )
+
+    logging.info(f"🔍 구간 수집: {from_date} ~ {to_date}")
+    response = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+    response.raise_for_status()
+    data = response.json()
+    if not data or not data.get('success'):
+        return []
+    result = data.get('result', {})
+    games = result.get('games', [])
+    logging.info(f"📦 구간 수신 경기 수: {len(games)} (gameTotalCount={result.get('gameTotalCount')})")
+    return games
+
+
 def collect_game_schedule():
     """
-    네이버 스포츠 games API를 사용하여 KBO 월별 전체 일정을 수집합니다.
-    요청한 최소 스키마로 매핑하여 반환합니다.
+    네이버 스포츠 games API를 사용하여 KBO 연간 전체 일정을 수집합니다.
+    KBO 시즌(3월~10월)의 모든 경기 일정을 수집하여 반환합니다.
     
     Returns:
         dict: 수집된 데이터 또는 에러 정보
     """
     try:
-        # 조회 기간: 현재 달의 1일 ~ 말일
+        # 조회 기간: 연간 전체 (3월 ~ 10월 KBO 시즌)
         now = datetime.now()
-        month_start = datetime(now.year, now.month, 1)
-        # 다음 달 1일에서 하루 빼기 = 말일
-        if now.month == 12:
-            next_month_start = datetime(now.year + 1, 1, 1)
-        else:
-            next_month_start = datetime(now.year, now.month + 1, 1)
-        month_end = next_month_start - timedelta(days=1)
+        year = now.year
+        
+        # KBO 시즌은 보통 3월에 시작해서 10월에 끝남
+        season_start = datetime(year, 3, 1)  # 3월 1일
+        season_end = datetime(year, 10, 31)  # 10월 31일
+        
+        # 만약 현재 시즌이 끝났다면 다음 시즌을 조회
+        if now > season_end:
+            year += 1
+            season_start = datetime(year, 3, 1)
+            season_end = datetime(year, 10, 31)
 
-        from_date = month_start.strftime('%Y-%m-%d')
-        to_date = month_end.strftime('%Y-%m-%d')
+        logging.info(f"🔍 KBO 연간 경기 일정 수집 시작: {season_start.strftime('%Y-%m-%d')} ~ {season_end.strftime('%Y-%m-%d')}")
 
-        api_url = (
-            'https://api-gw.sports.naver.com/schedule/games'
-            f'?fields=basic%2Cschedule%2Cbaseball&upperCategoryId=kbaseball&categoryId=kbo'
-            f'&fromDate={from_date}&toDate={to_date}&roundCodes=&size=500'
-        )
+        # 월별 구간으로 나누어 수집 (size=500 제한 회피)
+        pointer = season_start
+        all_games = []
+        while pointer <= season_end:
+            year = pointer.year
+            month = pointer.month
+            start_day = 1 if pointer.day == 1 else pointer.day
+            start_date = datetime(year, month, start_day)
+            last_day = calendar.monthrange(year, month)[1]
+            end_date = datetime(year, month, last_day)
+            # 시즌 끝 이후로 넘어가지 않도록 캡
+            if end_date > season_end:
+                end_date = season_end
 
-        logging.info(f"🔍 KBO games 수집 시작: {from_date} ~ {to_date}")
+            from_date = start_date.strftime('%Y-%m-%d')
+            to_date = end_date.strftime('%Y-%m-%d')
+            try:
+                monthly_games = _fetch_games(from_date, to_date)
+                all_games.extend(monthly_games)
+            except Exception as e:
+                logging.error(f"❌ {from_date}~{to_date} 구간 수집 실패: {e}")
 
-        response = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-        response.raise_for_status()
-        logging.info(f"✅ API 응답 성공: {response.status_code}")
+            # 다음 달 1일로 이동
+            if month == 12:
+                pointer = datetime(year + 1, 1, 1)
+            else:
+                pointer = datetime(year, month + 1, 1)
 
-        data = response.json()
-        if not data or not data.get('success'):
-            raise ValueError('데이터를 찾을 수 없습니다.')
+        # 중복 제거 (gameId 기준)
+        unique_by_id = {}
+        for g in all_games:
+            gid = g.get('gameId')
+            if gid:
+                unique_by_id[gid] = g
 
-        result = data.get('result', {})
-        games = result.get('games', [])
-        logging.info(f"📦 수신 경기 수: {len(games)} (gameTotalCount={result.get('gameTotalCount')})")
+        games = list(unique_by_id.values())
+        logging.info(f"📦 통합 수신 경기 수(중복 제거): {len(games)}")
 
         mapped = []
         for g in games:
@@ -123,8 +174,8 @@ def collect_game_schedule():
             'summary': {
                 'total_games': len(mapped),
                 'date_range': {
-                    'start': from_date,
-                    'end': to_date,
+                    'start': season_start.strftime('%Y-%m-%d'),
+                    'end': season_end.strftime('%Y-%m-%d'),
                 }
             }
         }
@@ -168,10 +219,10 @@ def get_today_games_from_schedule(schedule_data):
 
 def test_collect_game_schedule():
     """
-    경기 스케줄 수집 테스트 함수
+    연간 경기 스케줄 수집 테스트 함수
     """
     print("=" * 60)
-    print("🏟️ KBO 경기 스케줄 수집 테스트 시작")
+    print("🏟️ KBO 연간 경기 스케줄 수집 테스트 시작")
     print("=" * 60)
     
     result = collect_game_schedule()
@@ -179,8 +230,7 @@ def test_collect_game_schedule():
     if result.get('status') == 'success':
         print(f"✅ 수집 성공!")
         print(f"📊 수집된 경기 수: {len(result.get('data', []))}")
-        print(f"📅 기간: {result.get('summary', {}).get('date_range', {}).get('start')} ~ {result.get('summary', {}).get('date_range', {}).get('end')}")
-        print(f"🚫 필터링된 경기 수: {result.get('summary', {}).get('filtered_games', 0)}")
+        print(f"📅 시즌 기간: {result.get('summary', {}).get('date_range', {}).get('start')} ~ {result.get('summary', {}).get('date_range', {}).get('end')}")
         
         print("\n📋 수집된 경기 목록 (최근 10개):")
         recent_games = result.get('data', [])[-10:]  # 최근 10개만 표시

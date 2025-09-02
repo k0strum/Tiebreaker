@@ -26,4 +26,9 @@ public class CommentaryController {
   public SseEmitter sse(@PathVariable String gameId) {
     return commentaryService.subscribe(gameId);
   }
+
+  @DeleteMapping("/games/{gameId}/livegame")
+  public void clear(@PathVariable String gameId) {
+    commentaryService.clearByGame(gameId);
+  }
 }

@@ -64,10 +64,6 @@ function PlayerDetail() {
     navigate("/rankings");
   };
 
-  const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
-  };
-
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -266,15 +262,6 @@ function PlayerDetail() {
           <span>뒤로가기</span>
         </button>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={handleFavorite}
-            className={`text-2xl transition-colors ${isFavorite
-              ? "text-yellow-500"
-              : "text-gray-400 hover:text-yellow-500"
-              }`}
-          >
-            {isFavorite ? "⭐" : "☆"}
-          </button>
           <button
             onClick={handleShare}
             className="text-gray-600 hover:text-gray-800 text-lg"

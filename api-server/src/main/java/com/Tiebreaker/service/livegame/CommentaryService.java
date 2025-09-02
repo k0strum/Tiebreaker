@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -22,7 +23,16 @@ public class CommentaryService {
   // gameId -> emitters
   private final Map<String, Set<SseEmitter>> emitterByGame = new ConcurrentHashMap<>();
 
+  @Transactional
   public Commentary save(CommentaryEvent event) {
+    // 경기 시작(READY/게임 시작 같은 초기 이벤트)일 때 기존 문구 제거 옵션
+    if (event.getInning() != null && event.getInning() == 0) {
+      try {
+        commentaryRepository.deleteByGameId(event.getGameId());
+        System.out.println("🧹 기존 해설 삭제: gameId=" + event.getGameId());
+      } catch (Exception ignored) {
+      }
+    }
     Commentary c = Commentary.builder()
         .gameId(event.getGameId())
         .ts(event.getTs())
@@ -100,5 +110,10 @@ public class CommentaryService {
         emitterByGame.remove(gameId);
       }
     }
+  }
+
+  @Transactional
+  public void clearByGame(String gameId) {
+    commentaryRepository.deleteByGameId(gameId);
   }
 }

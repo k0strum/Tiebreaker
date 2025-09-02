@@ -11,10 +11,7 @@ import Header from './components/Header.jsx'
 import Home from './pages/Home.jsx'
 import PlayerRanking from './pages/PlayerRanking.jsx'
 import PlayerDetail from './pages/PlayerDetail.jsx'
-import Chat from './pages/Chat.jsx'
-import Predictions from './pages/Predictions.jsx'
 import Chatbot from './pages/Chatbot.jsx'
-import CommentaryDemo from './pages/CommentaryDemo.jsx'
 import GameSchedule from './pages/GameSchedule.jsx'
 import LiveGames from './pages/LiveGames.jsx'
 import LiveGame from './pages/LiveGame.jsx'
@@ -48,10 +45,7 @@ const AppContent = () => {
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/rankings" element={<PlayerRanking />} />
           <Route path="/player/:playerId" element={<PlayerDetail />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/predictions" element={<Predictions />} />
           <Route path="/chatbot" element={<Chatbot />} />
-          <Route path="/commentary-demo" element={<CommentaryDemo />} />
           <Route path="/games" element={<GameSchedule />} />
           <Route path="/live-games" element={<LiveGames />} />
           <Route path="/live-game/:gameId" element={<LiveGame />} />

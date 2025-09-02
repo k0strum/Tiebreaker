@@ -459,69 +459,6 @@ const Home = () => {
               </div>
             )}
           </div>
-
-          {/* 기능 카드들 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 플레이어 통계 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-3xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                플레이어 통계
-              </h3>
-              <p className="text-gray-600 mb-4">
-                선수들의 상세한 통계 정보를 확인해보세요
-              </p>
-              <Link
-                to="/rankings"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                통계 보기 →
-              </Link>
-            </div>
-
-            {/* 예측 게임 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-3xl mb-4">⚽</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                예측 게임
-              </h3>
-              <p className="text-gray-600 mb-4">
-                경기 결과를 예측하고 포인트를 획득하세요
-              </p>
-              <Link
-                to="/predictions"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                예측하기 →
-              </Link>
-            </div>
-
-            {/* 채팅 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-3xl mb-4">💬</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                실시간 채팅
-              </h3>
-              <p className="text-gray-600 mb-4">
-                다른 사용자들과 실시간으로 소통해보세요
-              </p>
-              <Link
-                to="/chat"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                채팅하기 →
-              </Link>
-            </div>
-          </div>
-
-          {/* 개발자 정보 */}
-          <div className="mt-12 text-center text-gray-500">
-            <p className="text-sm">
-              개발 중인 프로젝트입니다.
-              <br />
-              로그인/회원가입 기능을 테스트해보세요!
-            </p>
-          </div>
         </div>
       </main>
     </div>

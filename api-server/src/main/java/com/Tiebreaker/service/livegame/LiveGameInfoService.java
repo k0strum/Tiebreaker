@@ -1,7 +1,7 @@
 package com.Tiebreaker.service.livegame;
 
 import com.Tiebreaker.dto.livegame.LiveGameInfoDto;
-import com.Tiebreaker.entity.LiveGameInfo;
+import com.Tiebreaker.entity.livegame.LiveGameInfo;
 import com.Tiebreaker.repository.LiveGameInfoRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +50,7 @@ public class LiveGameInfoService {
   }
 
   public Optional<LiveGameInfo> getLatestByGameId(String gameId) {
-    return liveGameInfoRepository.findByGameIdOrderByRegDateDesc(gameId);
+    return liveGameInfoRepository.findTop1ByGameIdOrderByTimestampDesc(gameId);
   }
 
   public List<LiveGameInfo> getLiveGames() {

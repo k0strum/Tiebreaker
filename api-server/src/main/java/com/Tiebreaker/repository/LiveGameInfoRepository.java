@@ -1,6 +1,6 @@
 package com.Tiebreaker.repository;
 
-import com.Tiebreaker.entity.LiveGameInfo;
+import com.Tiebreaker.entity.livegame.LiveGameInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,9 +11,9 @@ import java.util.Optional;
 public interface LiveGameInfoRepository extends JpaRepository<LiveGameInfo, String> {
 
   /**
-   * 특정 경기의 최신 실시간 정보 조회
+   * 특정 경기의 최신 실시간 정보 조회 (timestamp 기준)
    */
-  Optional<LiveGameInfo> findByGameIdOrderByRegDateDesc(String gameId);
+  Optional<LiveGameInfo> findTop1ByGameIdOrderByTimestampDesc(String gameId);
 
   /**
    * 특정 상태의 경기들 조회
