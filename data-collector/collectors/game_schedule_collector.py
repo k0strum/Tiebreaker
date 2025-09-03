@@ -284,6 +284,110 @@ def test_today_games_filtering():
     print("=" * 60)
     return today_result
 
+def collect_today_games_only():
+    """
+    네이버 스포츠 games API를 사용하여 오늘 경기만 직접 수집합니다.
+    
+    Returns:
+        dict: 수집된 데이터 또는 에러 정보
+    """
+    try:
+        today = datetime.now()
+        today_str = today.strftime('%Y-%m-%d')
+        
+        logging.info(f"🔍 오늘 경기 수집 시작: {today_str}")
+
+        # 오늘 경기만 조회
+        api_url = (
+            'https://api-gw.sports.naver.com/schedule/games'
+            f'?fields=basic%2Cschedule%2Cbaseball&upperCategoryId=kbaseball&categoryId=kbo'
+            f'&fromDate={today_str}&toDate={today_str}&roundCodes=&size=500'
+        )
+
+        response = requests.get(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()
+        data = response.json()
+        if not data or not data.get('success'):
+            return {'error': 'Failed to fetch today\'s games from Naver Sports API'}
+        
+        result = data.get('result', {})
+        games = result.get('games', [])
+        logging.info(f"📦 오늘 수신 경기 수: {len(games)} (gameTotalCount={result.get('gameTotalCount')})")
+
+        mapped = []
+        for g in games:
+            # 요청한 필드로만 매핑
+            mapped.append({
+                'gameId': g.get('gameId', ''),
+                'gameDate': g.get('gameDate', ''),
+                'gameDateTime': g.get('gameDateTime', ''),
+                'stadium': g.get('stadium', ''),
+                'homeTeamCode': g.get('homeTeamCode', ''),
+                'homeTeamName': g.get('homeTeamName', ''),
+                'homeTeamScore': g.get('homeTeamScore', 0),
+                'awayTeamCode': g.get('awayTeamCode', ''),
+                'awayTeamName': g.get('awayTeamName', ''),
+                'awayTeamScore': g.get('awayTeamScore', 0),
+                'statusCode': g.get('statusCode', ''),
+                'statusInfo': g.get('statusInfo', ''),  # 경기 진행 상황 추가
+                'winner': g.get('winner', ''),
+                'suspended': g.get('suspended', False),
+                'broadChannel': g.get('broadChannel', ''),
+                'homeStarterName': g.get('homeStarterName', ''),
+                'awayStarterName': g.get('awayStarterName', ''),
+                'roundCode': g.get('roundCode', ''),
+            })
+
+        # 정렬: 날짜/시간 기준
+        mapped.sort(key=lambda x: (x.get('gameDate', ''), x.get('gameDateTime', '')))
+
+        return {
+            'status': 'success',
+            'collected_at': time.time(),
+            'source': 'naver_sports_api_games_today',
+            'data': mapped,
+            'date': today_str,
+            'summary': {
+                'total_games': len(mapped),
+                'date': today_str
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"❌ 오늘 경기 수집 중 오류: {e}")
+        return {'error': str(e)}
+
+def test_today_games_direct_collection():
+    """
+    오늘 경기 직접 수집 테스트 함수
+    """
+    print("=" * 60)
+    print("⚾ 오늘 경기 직접 수집 테스트 시작")
+    print("=" * 60)
+    
+    result = collect_today_games_only()
+    
+    if result.get('status') == 'success':
+        print(f"✅ 직접 수집 성공!")
+        print(f"📊 수집된 오늘 경기 수: {len(result.get('data', []))}")
+        print(f"📅 날짜: {result.get('date')}")
+        print(f"🔗 소스: {result.get('source')}")
+        
+        if result.get('data'):
+            print("\n📋 오늘 경기 목록:")
+            for i, game in enumerate(result.get('data', []), 1):
+                print(f"  {i}. {game['awayTeamName']} vs {game['homeTeamName']} - {game['statusCode']}")
+        else:
+            print("\n📅 오늘은 경기가 없습니다.")
+        
+        print(f"\n📄 오늘 경기 데이터 (JSON):")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(f"❌ 직접 수집 실패: {result.get('error')}")
+    
+    print("=" * 60)
+    return result
+
 if __name__ == "__main__":
     # 로깅 설정
     logging.basicConfig(
@@ -292,6 +396,13 @@ if __name__ == "__main__":
     )
     
     # 테스트 실행
+    print("🔍 새로운 직접 수집 방식 테스트")
+    test_today_games_direct_collection()
+    print("\n")
+    
+    print("🔍 기존 필터링 방식 테스트")
     test_today_games_filtering()
     print("\n")
+    
+    print("🔍 전체 스케줄 수집 테스트")
     test_collect_game_schedule()

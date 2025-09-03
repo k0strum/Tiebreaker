@@ -273,13 +273,13 @@ class LiveGameSimulator:
             }
             self.producer.send(self.commentary_topic, commentary_event)
                 
-                self.producer.flush()
+            self.producer.flush()
                 
             logging.info(f"📡 데이터 전송 완료:")
             logging.info(f"   - live-game-info: {live_game_data.status} {live_game_data.inning}회{live_game_data.half}")
             logging.info(f"   - commentary: {commentary_data.text}")
                     
-            except Exception as e:
+        except Exception as e:
             logging.error(f"❌ Kafka 전송 실패: {e}")
     
     def simulate_single_game(self, game: dict):
@@ -376,11 +376,11 @@ class LiveGameSimulator:
             logging.info(f"📡 {away_team} vs {home_team}: {current_inning}회{current_half} ({current_score['awayScore']}-{current_score['homeScore']})")
             
             # 이닝 변경
-                        if current_half == "T":
-                            current_half = "B"
-                        else:
+            if current_half == "T":
+                current_half = "B"
+            else:
                 current_half = "T"
-                            current_inning += 1
+                current_inning += 1
             
             # 이닝 간 대기
             time.sleep(3)

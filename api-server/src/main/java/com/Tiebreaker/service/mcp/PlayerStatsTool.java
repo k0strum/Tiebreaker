@@ -86,6 +86,7 @@ public class PlayerStatsTool implements McpTool {
           "wins", p.getWins(),
           "losses", p.getLosses(),
           "saves", p.getSaves(),
+          "holds", p.getHolds(),
           "whip", p.getWhip(),
           "strikeouts", p.getStrikeouts(),
           "games", p.getGames());
