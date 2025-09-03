@@ -16,7 +16,7 @@ function FloatingChatbot() {
   const [pendingReqId, setPendingReqId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [position, setPosition] = useState({ x: 20, y: 20 })
 
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1)

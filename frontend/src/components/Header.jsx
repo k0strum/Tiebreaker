@@ -12,7 +12,7 @@ const Header = () => {
     { path: '/games', label: '경기일정' },
     { path: '/live-games', label: '실시간경기' },
     { path: '/rankings', label: '선수정보' },
-    { path: '/chatbot', label: 'AI챗봇' },
+    // { path: '/chatbot', label: 'AI챗봇' },
   ];
 
   return (
