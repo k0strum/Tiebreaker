@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 
 // 컴포넌트 import
 import Header from './components/Header.jsx'
+import FloatingChatbot from './components/FloatingChatbot.jsx'
 
 // 페이지 컴포넌트들
 import Home from './pages/Home.jsx'
@@ -60,6 +61,7 @@ function App() {
     <AuthProvider>
       <Router>
         <AppContent />
+        <FloatingChatbot />
       </Router>
     </AuthProvider>
   )

@@ -41,7 +41,7 @@ function Chatbot() {
     const connectWebSocket = () => {
       console.log('WebSocket 연결 시도 중...')
       const ws = new WebSocket('ws://localhost:8080/mcp')
-      
+
       ws.onopen = () => {
         console.log('WebSocket 연결 성공!')
         setIsConnected(true)
@@ -51,17 +51,17 @@ function Chatbot() {
         setPendingReqId(reqId)
         ws.send(JSON.stringify({ type: 'tools/list', requestId: reqId }))
       }
-      
+
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data)
           console.log('WebSocket 메시지 수신:', data)
-          
+
           // 시스템 메시지나 도구 목록은 사용자에게 보이지 않게 처리
           if (data.type === 'hello' || (data.type === 'tool/result' && Array.isArray(data.content))) {
             return
           }
-          
+
           appendServer(data)
           setLoading(false)
         } catch (err) {
@@ -69,18 +69,18 @@ function Chatbot() {
           setLoading(false)
         }
       }
-      
+
       ws.onerror = (error) => {
         console.error('WebSocket 오류:', error)
         setError('WebSocket 연결 오류가 발생했습니다.')
         setLoading(false)
       }
-      
+
       ws.onclose = (event) => {
         console.log('WebSocket 연결 종료:', event.code, event.reason)
         setIsConnected(false)
         setLoading(false)
-        
+
         // 연결이 비정상적으로 종료된 경우 재연결 시도
         if (event.code !== 1000) {
           console.log('3초 후 재연결 시도...')
@@ -91,7 +91,7 @@ function Chatbot() {
           }, 3000)
         }
       }
-      
+
       wsRef.current = ws
     }
 
@@ -100,7 +100,7 @@ function Chatbot() {
     return () => {
       if (wsRef.current) {
         console.log('WebSocket 연결 정리 중...')
-        try { 
+        try {
           wsRef.current.close(1000, 'Component unmounting')
         } catch (error) {
           console.error('WebSocket 정리 오류:', error)
@@ -115,7 +115,7 @@ function Chatbot() {
 
   // 고유 ID 생성을 위한 카운터
   const messageIdCounter = useRef(0)
-  
+
   const generateUniqueId = () => {
     messageIdCounter.current += 1
     return `${Date.now()}-${messageIdCounter.current}`
@@ -274,9 +274,17 @@ function Chatbot() {
             <div key={idx} className="border rounded-lg p-3 bg-gray-50">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{s.homeTeamName}</span>
-                  <span className="text-xs text-gray-500">vs</span>
-                  <span className="text-sm font-medium">{s.awayTeamName}</span>
+                  <span className="text-sm font-medium">
+                    {s.homeTeamScore !== null && s.awayTeamScore !== null ? (
+                      `${s.homeTeamName} ${s.homeTeamScore} vs ${s.awayTeamScore} ${s.awayTeamName}`
+                    ) : (
+                      <>
+                        <span>{s.homeTeamName}</span>
+                        <span className="text-xs text-gray-500">vs</span>
+                        <span>{s.awayTeamName}</span>
+                      </>
+                    )}
+                  </span>
                 </div>
                 <div className="text-xs text-gray-500">
                   {s.gameDateTime ? new Date(s.gameDateTime).toLocaleTimeString('ko-KR', {
@@ -297,14 +305,31 @@ function Chatbot() {
               </div>
               <div className="mt-2 pt-2 border-t border-gray-200">
                 <div className="flex justify-between items-center text-xs">
-                  <span className={`px-2 py-1 rounded ${
-                    s.statusCode === 'BEFORE' ? 'bg-blue-100 text-blue-800' :
-                    s.statusCode === 'LIVE' ? 'bg-red-100 text-red-800' :
-                    s.statusCode === 'END' ? 'bg-gray-100 text-gray-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {s.statusInfo || s.statusCode}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded ${s.statusCode === 'BEFORE' ? 'bg-blue-100 text-blue-800' :
+                      s.statusCode === 'LIVE' ? 'bg-red-100 text-red-800' :
+                        s.statusCode === 'RESULT' ? 'bg-green-100 text-green-800' :
+                          s.statusCode === 'END' ? 'bg-gray-100 text-gray-800' :
+                            'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {s.statusCode === 'RESULT' ? '경기완료' :
+                        s.statusCode === 'BEFORE' && s.statusInfo === '경기취소' ? '경기취소' :
+                          s.statusCode === 'LIVE' ? '경기중' :
+                            s.statusInfo || s.statusCode}
+                    </span>
+
+                    {s.statusCode === 'LIVE' && s.statusInfo && (
+                      <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        {s.statusInfo}
+                      </span>
+                    )}
+                    {s.winner && s.winner !== 'DRAW' && (
+                      <span className={`px-2 py-1 rounded text-white text-xs ${s.winner === 'HOME' ? 'bg-blue-600' : 'bg-red-600'
+                        }`}>
+                        {s.winner === 'HOME' ? '홈팀승' : '원정팀승'}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-gray-500">ID: {s.gameId}</span>
                 </div>
               </div>
@@ -429,7 +454,7 @@ function Chatbot() {
   return (
     <div className="container mx-auto p-8 bg-gray-50 min-h-screen">
       <ErrorToast />
-      <h1 className="text-3xl font-bold text-orange-600 mb-6">🤖 KBO AI 어시스턴트</h1><br/>
+      <h1 className="text-3xl font-bold text-orange-600 mb-6">🤖 KBO AI 어시스턴트</h1><br />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 좌측: 채팅 영역 */}

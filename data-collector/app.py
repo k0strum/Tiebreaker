@@ -77,7 +77,14 @@ def scheduler_status():
         "player_scheduler": "running" if player_scheduler else "stopped",
         "game_schedule_weekly_scheduler": "running" if game_schedule_weekly_scheduler else "stopped",
         "game_schedule_daily_scheduler": "running" if game_schedule_daily_scheduler else "stopped",
-        "live_game_simulator_scheduler": "running" if live_game_simulator_scheduler_instance else "stopped"
+        "live_game_simulator_scheduler": "running" if live_game_simulator_scheduler_instance else "stopped",
+        "description": {
+            "team_rank_scheduler": "팀 랭킹 수집 (매일 새벽 4시)",
+            "player_scheduler": "선수 정보 수집 (매일 새벽 3시)",
+            "game_schedule_weekly_scheduler": "연간 경기 스케줄 수집 (매일 새벽 5시)",
+            "game_schedule_daily_scheduler": "오늘 경기 실시간 수집 (1분마다)",
+            "live_game_simulator_scheduler": "실시간 경기 시뮬레이션"
+        }
     })
 
 # 스케줄러 초기화를 위한 전역 변수

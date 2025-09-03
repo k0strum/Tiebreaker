@@ -1,6 +1,6 @@
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
-from collectors.game_schedule_collector import collect_game_schedule, get_today_games_from_schedule
+from collectors.game_schedule_collector import collect_game_schedule, get_today_games_from_schedule, collect_today_games_only
 from utils.kafka_producer import create_kafka_producer
 
 def schedule_game_schedule_collection():
@@ -46,24 +46,19 @@ def schedule_game_schedule_collection():
 
 def schedule_today_games_collection():
     """
-    오늘 경기 데이터만 수집하는 스케줄러 (더 자주 실행)
+    오늘 경기 데이터만 수집하는 스케줄러 (1분마다 실행 - 실시간 업데이트)
     """
     def collect_and_send_today():
-        """오늘 경기 데이터를 수집하고 Kafka로 전송합니다."""
+        """오늘 경기 데이터를 직접 수집하고 Kafka로 전송합니다."""
         try:
-            logging.info("🔄 오늘 경기 수집 및 전송 시작")
+            logging.info("🔄 오늘 경기 실시간 수집 및 전송 시작")
             
-            # 전체 스케줄을 먼저 수집
-            schedule_data = collect_game_schedule()
-            if schedule_data.get('status') != 'success':
-                logging.error(f"❌ 전체 스케줄 수집 실패: {schedule_data.get('error')}")
-                return
-            
-            # 오늘 경기만 필터링
-            collected_data = get_today_games_from_schedule(schedule_data)
+            # 새로운 전용 함수 사용 - 전체 스케줄 수집 없이
+            collected_data = collect_today_games_only()
             
             if collected_data.get('status') == 'success':
-                logging.info(f"📊 수집된 오늘 경기 수: {len(collected_data.get('data', []))}")
+                game_count = len(collected_data.get('data', []))
+                logging.info(f"📊 수집된 오늘 경기 수: {game_count}")
                 
                 producer = create_kafka_producer()
                 if producer:
@@ -74,22 +69,22 @@ def schedule_today_games_collection():
                 else:
                     logging.error("❌ Kafka Producer 생성 실패")
             else:
-                logging.error(f"❌ 오늘 경기 데이터 필터링 실패: {collected_data.get('error')}")
+                logging.error(f"❌ 오늘 경기 데이터 수집 실패: {collected_data.get('error')}")
         except Exception as e:
             logging.error(f"❌ 오늘 경기 스케줄링 작업 중 오류 발생: {e}")
     
     # 스케줄러 생성
     scheduler = BackgroundScheduler()
     
-    # 매시간 실행 (경기 상태 업데이트를 위해)
-    scheduler.add_job(collect_and_send_today, 'interval', hours=1, id='today_games_collection')
+    # 1분마다 실행 (실시간 경기 상태 업데이트를 위해)
+    scheduler.add_job(collect_and_send_today, 'interval', minutes=1, id='today_games_realtime_collection')
     
     # 즉시 첫 번째 실행
     collect_and_send_today()
     
     # 스케줄러 시작
     scheduler.start()
-    logging.info("오늘 경기 스케줄러가 시작되었습니다. 매시간마다 실행됩니다.")
+    logging.info("오늘 경기 실시간 스케줄러가 시작되었습니다. 1분마다 실행됩니다.")
     
     return scheduler
 
