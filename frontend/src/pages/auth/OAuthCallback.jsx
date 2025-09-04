@@ -30,8 +30,35 @@ function OAuthCallback() {
         if (success === 'true' && token) {
           // JWT 토큰을 디코딩하여 사용자 정보 추출
           const decoded = jwtDecode(token);
-          
-          // 토큰을 사용하여 사용자 정보 가져오기
+          const email = decoded.sub; // JWT 토큰에서 이메일 추출
+
+          // 소셜 로그인 사용자의 추가 정보 입력 필요 여부 확인
+          try {
+            const checkResponse = await axios.get('/oauth/check-phone', {
+              params: { email },
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (checkResponse.data.success) {
+              const { needsPhoneInput, phone, loginType: userLoginType } = checkResponse.data;
+
+              // 추가 정보 입력이 필요한 경우 (전화번호가 없거나 기본값인 경우)
+              if (needsPhoneInput || !phone || phone === '000-0000-0000') {
+                // 추가 정보 입력 페이지로 리다이렉트
+                navigate(`/oauth-additional-info?token=${encodeURIComponent(token)}&loginType=${encodeURIComponent(loginType)}&email=${encodeURIComponent(email)}`, { replace: true });
+                return;
+              }
+            }
+          } catch (checkError) {
+            console.warn('추가 정보 확인 중 오류 (무시하고 진행):', checkError);
+            // 확인 실패 시에도 추가 정보 입력 페이지로 이동
+            navigate(`/oauth-additional-info?token=${encodeURIComponent(token)}&loginType=${encodeURIComponent(loginType)}&email=${encodeURIComponent(email)}`, { replace: true });
+            return;
+          }
+
+          // 추가 정보가 이미 있는 경우 바로 로그인 처리
           const response = await axios.get('/members/me', {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -39,12 +66,12 @@ function OAuthCallback() {
           });
 
           const { role, profileImage, nickname, memberId } = response.data;
-          
-                     // AuthContext의 login 함수 호출
-           login(token, role, profileImage, nickname, memberId, loginType);
-           
-           // 로그인 성공 후 홈으로 리다이렉트
-           navigate('/', { replace: true });
+
+          // AuthContext의 login 함수 호출
+          login(token, role, profileImage, nickname, memberId, loginType);
+
+          // 로그인 성공 후 홈으로 리다이렉트
+          navigate('/', { replace: true });
         } else {
           setError('소셜 로그인에 실패했습니다.');
         }
@@ -70,7 +97,7 @@ function OAuthCallback() {
             <p className="text-gray-600">로그인 처리 중...</p>
           </div>
         </div>
-        
+
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
             <div className="flex justify-center">
@@ -97,7 +124,7 @@ function OAuthCallback() {
             <p className="text-gray-600">로그인 오류</p>
           </div>
         </div>
-        
+
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             {/* 에러 아이콘 */}
@@ -108,7 +135,7 @@ function OAuthCallback() {
                 </svg>
               </div>
             </div>
-            
+
             {/* 에러 메시지 */}
             <div className="text-center mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -118,7 +145,7 @@ function OAuthCallback() {
                 {error}
               </div>
             </div>
-            
+
             {/* 액션 버튼들 */}
             <div className="flex flex-col space-y-3">
               <button
@@ -134,7 +161,7 @@ function OAuthCallback() {
                 홈으로 돌아가기
               </button>
             </div>
-            
+
             {/* 추가 안내 */}
             <div className="mt-6 text-center text-sm text-gray-500">
               <p>계정이 이미 존재하는 경우 일반 로그인을 이용해주세요.</p>

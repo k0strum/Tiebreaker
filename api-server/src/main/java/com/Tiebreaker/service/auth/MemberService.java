@@ -97,7 +97,8 @@ public class MemberService {
     // 6. JWT 토큰 생성
     String token = jwtTokenProvider.createToken(
       userDetails.getUsername(), 
-      member.getRole().toString()
+      member.getRole().toString(),
+      member.getId().toString()
     );
     
     // 7. 로그인 응답 생성

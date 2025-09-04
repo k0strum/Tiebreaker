@@ -39,10 +39,19 @@ public class LiveGameInfoController {
   }
 
   /**
-   * 진행 중인 경기들 조회
+   * 진행 중인 경기들 조회 (오늘 갱신된 것만)
    */
   @GetMapping("/live")
   public ResponseEntity<List<LiveGameInfo>> getLiveGames() {
+    List<LiveGameInfo> liveGames = liveGameInfoService.getTodayActiveGames();
+    return ResponseEntity.ok(liveGames);
+  }
+
+  /**
+   * 모든 활성 경기들 조회 (과거 데이터 포함 - 관리자용)
+   */
+  @GetMapping("/live/all")
+  public ResponseEntity<List<LiveGameInfo>> getAllLiveGames() {
     List<LiveGameInfo> liveGames = liveGameInfoService.getLiveGames();
     return ResponseEntity.ok(liveGames);
   }

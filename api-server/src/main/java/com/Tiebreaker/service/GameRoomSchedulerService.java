@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
@@ -21,9 +22,15 @@ public class GameRoomSchedulerService {
   private final SimpMessagingTemplate messagingTemplate;
   private final LiveGameInfoService liveGameInfoService;
 
+  // 하루에 한 번만 과거 데이터 정리 실행
+  private final AtomicBoolean cleanupExecutedToday = new AtomicBoolean(false);
+
   @Scheduled(fixedRate = 300000) // 5분마다 실행
   public void manageGameRooms() {
     log.info("게임 룸 스케줄러 실행 시작");
+
+    // 서버 시작 시 과거 데이터 정리 (하루에 한 번만 실행)
+    cleanupOldDataIfNeeded();
 
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime thirtyMinutesFromNow = now.plusMinutes(30); // 30분 전
@@ -112,6 +119,16 @@ public class GameRoomSchedulerService {
         game.getHomeTeamName(), game.getAwayTeamName());
 
     messagingTemplate.convertAndSend(destination, createSystemMessage(message));
+  }
+
+  /**
+   * 하루에 한 번만 과거 데이터 정리 실행
+   */
+  private void cleanupOldDataIfNeeded() {
+    if (cleanupExecutedToday.compareAndSet(false, true)) {
+      log.info("과거 데이터 정리 시작");
+      liveGameInfoService.cleanupOldReadyGames();
+    }
   }
 
   private Object createSystemMessage(String messageContent) {
