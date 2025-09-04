@@ -8,13 +8,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.util.*;
 import javax.crypto.SecretKey;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
     // 토큰 생성 시 사용되는 시크릿 키
     @Value("${jwt.secret}")
     private String secretKey;
-    
+
     // 토큰 유효 기간
     @Value("${jwt.validity}")
     private long validityInMilliseconds;
@@ -23,13 +26,14 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 
-    public String createToken(String email, String role) {
+    public String createToken(String email, String role, String memberId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
         SecretKey key = getSigningKey();
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
+                .claim("memberId", memberId)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key, Jwts.SIG.HS256)
@@ -59,4 +63,4 @@ public class JwtTokenProvider {
         }
         return false;
     }
-} 
+}

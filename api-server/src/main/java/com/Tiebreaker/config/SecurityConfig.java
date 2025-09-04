@@ -65,7 +65,7 @@ public class SecurityConfig {
                                 "/app/**", // WebSocket/STOMP
                                 "/mcp" // MCPServer
                         ).permitAll()
-                        .requestMatchers("/api/members/me").authenticated() // 인증된 사용자만 접근 가능
+                        .requestMatchers("/api/members/me", "/api/predictions/**").authenticated() // 인증된 사용자만 접근 가능
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(

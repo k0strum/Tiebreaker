@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,6 +56,45 @@ public class LiveGameInfoService {
 
   public List<LiveGameInfo> getLiveGames() {
     return liveGameInfoRepository.findByStatusIn(Arrays.asList("READY", "LIVE"));
+  }
+
+  /**
+   * 오늘 생성되거나 갱신된 활성 경기들만 조회
+   * 서버 재시작 후 과거 데이터가 READY 상태로 남는 문제 해결
+   */
+  public List<LiveGameInfo> getTodayActiveGames() {
+    return liveGameInfoRepository.findTodayActiveGames(LocalDate.now());
+  }
+
+  /**
+   * 과거 데이터 정리 - 어제 이전의 READY 상태 데이터를 FINISHED로 변경
+   * 서버 재시작 시 호출하여 과거 데이터 정리
+   */
+  public void cleanupOldReadyGames() {
+    try {
+      LocalDate yesterday = LocalDate.now().minusDays(1);
+
+      // 어제 이전의 READY 상태 데이터 조회
+      List<LiveGameInfo> oldReadyGames = liveGameInfoRepository.findOldReadyGames(yesterday);
+
+      if (!oldReadyGames.isEmpty()) {
+        log.info("과거 READY 상태 데이터 {}개를 FINISHED로 변경합니다.", oldReadyGames.size());
+
+        for (LiveGameInfo game : oldReadyGames) {
+          game.setStatus("FINISHED");
+          game.setTimestamp(System.currentTimeMillis());
+          liveGameInfoRepository.save(game);
+          log.info("과거 데이터 정리: {} - {} vs {} (상태: READY → FINISHED)",
+              game.getGameId(), game.getHomeTeam(), game.getAwayTeam());
+        }
+
+        log.info("과거 데이터 정리 완료: {}개 처리됨", oldReadyGames.size());
+      } else {
+        log.info("정리할 과거 READY 데이터가 없습니다.");
+      }
+    } catch (Exception e) {
+      log.error("과거 데이터 정리 중 오류 발생: {}", e.getMessage(), e);
+    }
   }
 
   /**
