@@ -65,7 +65,7 @@ function OAuthCallback() {
             }
           });
 
-          const { role, profileImage, nickname, memberId } = response.data;
+          const { role, profileImage, nickname, id: memberId } = response.data;
 
           // AuthContext의 login 함수 호출
           login(token, role, profileImage, nickname, memberId, loginType);

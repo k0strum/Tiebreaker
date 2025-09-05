@@ -23,9 +23,7 @@ import java.util.List;
 @Slf4j
 public class kboCurrentSeasonController {
 
-  private final KboPlayerService kboPlayerService;
   private final KboTeamService kboTeamService;
-  private final ImageService imageService;
 
   @GetMapping("/teamRank")
   public ResponseEntity<List<CurrentTeamRankResponseDto>> getTeamRank() {
