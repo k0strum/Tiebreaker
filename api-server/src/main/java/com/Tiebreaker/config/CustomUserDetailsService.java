@@ -1,7 +1,7 @@
 package com.Tiebreaker.config;
 
 import com.Tiebreaker.entity.auth.Member;
-import com.Tiebreaker.repository.MemberRepository;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

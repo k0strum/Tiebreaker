@@ -1,4 +1,4 @@
-package com.Tiebreaker.repository;
+package com.Tiebreaker.repository.auth;
 
 import com.Tiebreaker.constant.VerificationType;
 import com.Tiebreaker.entity.auth.EmailVerification;

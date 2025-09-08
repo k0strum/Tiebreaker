@@ -1,7 +1,7 @@
 package com.Tiebreaker.controller.auth;
 
 import com.Tiebreaker.entity.auth.Member;
-import com.Tiebreaker.repository.MemberRepository;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

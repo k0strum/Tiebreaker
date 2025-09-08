@@ -9,7 +9,7 @@ import com.Tiebreaker.dto.prediction.*;
 import com.Tiebreaker.repository.Prediction.PredictionRepository;
 import com.Tiebreaker.repository.Prediction.PredictionInfoRepository;
 import com.Tiebreaker.repository.Prediction.PredictionRankingRepository;
-import com.Tiebreaker.repository.MemberRepository;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import com.Tiebreaker.repository.LiveGameInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

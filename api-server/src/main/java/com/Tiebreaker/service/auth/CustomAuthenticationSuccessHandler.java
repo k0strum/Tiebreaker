@@ -2,7 +2,7 @@ package com.Tiebreaker.service.auth;
 
 import com.Tiebreaker.config.JwtTokenProvider;
 import com.Tiebreaker.entity.auth.Member;
-import com.Tiebreaker.repository.MemberRepository;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,8 +38,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             Member member = memberOpt.get();
 
             // JWT 토큰 생성
-            String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().toString(),
-                    member.getId().toString());
+            String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().toString());
 
             // 프론트엔드로 리다이렉트 (토큰을 URL 파라미터로 전달)
             String frontendUrl = "http://localhost:5173";
