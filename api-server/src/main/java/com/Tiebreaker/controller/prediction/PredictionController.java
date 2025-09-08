@@ -1,7 +1,9 @@
 package com.Tiebreaker.controller.prediction;
 
 import com.Tiebreaker.dto.prediction.*;
+import com.Tiebreaker.entity.auth.Member;
 import com.Tiebreaker.service.prediction.PredictionService;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class PredictionController {
 
   private final PredictionService predictionService;
+  private final MemberRepository memberRepository;
 
   /**
    * 오늘 예측 가능한 경기 목록 조회
@@ -240,6 +243,7 @@ public class PredictionController {
 
   /**
    * 현재 로그인한 사용자 ID 조회
+   * JWT 토큰에서 추출한 이메일로 DB에서 memberId 조회
    */
   private Long getCurrentMemberId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -247,8 +251,12 @@ public class PredictionController {
       throw new RuntimeException("인증이 필요합니다.");
     }
 
-    // TODO: MemberRepository를 통해 email(authentication.getName())로 memberId 조회
-    // 임시로 1L 반환
-    return 1L;
+    // JWT 토큰에서 추출한 이메일로 memberId 조회
+    System.out.println("################################################");
+    String email = authentication.getName();
+    System.out.println(email);
+    return memberRepository.findByEmail(email)
+      .map(Member::getId)
+      .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + email));
   }
 }

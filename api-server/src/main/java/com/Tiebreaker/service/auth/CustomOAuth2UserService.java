@@ -1,7 +1,7 @@
 package com.Tiebreaker.service.auth;
 
 import com.Tiebreaker.entity.auth.Member;
-import com.Tiebreaker.repository.MemberRepository;
+import com.Tiebreaker.repository.auth.MemberRepository;
 import com.Tiebreaker.constant.Role;
 import com.Tiebreaker.service.ImageService;
 import lombok.RequiredArgsConstructor;

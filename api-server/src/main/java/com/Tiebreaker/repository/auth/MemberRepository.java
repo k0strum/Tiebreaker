@@ -1,10 +1,8 @@
-package com.Tiebreaker.repository;
+package com.Tiebreaker.repository.auth;
 
 import com.Tiebreaker.entity.auth.Member;
 import com.Tiebreaker.constant.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
