@@ -1,17 +1,18 @@
 package com.Tiebreaker.entity.scorebook;
 
+import com.Tiebreaker.constant.GameStatus;
 import com.Tiebreaker.entity.auth.Member;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -29,12 +30,6 @@ public class Game {
     private String awayTeam;
 
     @Column(nullable = false)
-    private Integer homeScore;
-
-    @Column(nullable = false)
-    private Integer awayScore;
-
-    @Column(nullable = false)
     private LocalDateTime gameDate;
 
     @Column(nullable = false)
@@ -46,8 +41,17 @@ public class Game {
     @Column(nullable = false)
     private String awayTeamStartingPitcher;
 
+    @Enumerated(EnumType.STRING)
+    private GameStatus status;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
+
+    @OneToOne(mappedBy = "game", cascade = CascadeType.ALL)
+    private GameDetail gameDetail;
+
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Inning> innings = new ArrayList<>();
 
 }

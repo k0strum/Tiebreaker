@@ -1,4 +1,4 @@
-package com.Tiebreaker.config;
+package com.Tiebreaker.service.auth;
 
 import com.Tiebreaker.entity.auth.Member;
 import com.Tiebreaker.repository.auth.MemberRepository;
