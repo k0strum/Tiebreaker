@@ -144,14 +144,14 @@ const Home = () => {
         <div className="max-w-6xl mx-auto">
           {/* 환영 메시지 */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-lg sm:text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-normal sm:leading-snug md:leading-tight break-words">
               Tiebreaker에 오신 것을 환영합니다!
             </h1>
           </div>
 
           {/* 로그인 상태 표시 카드 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">
               🔐 인증 상태 확인
             </h2>
 
@@ -161,7 +161,7 @@ const Home = () => {
                 <div className="flex items-center space-x-4">
                   <ProfileImage src={profileImg} alt="프로필" size="xl" />
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                       안녕하세요, {nickname}님! 👋
                     </h3>
                     <p className="text-gray-600">{email}</p>
@@ -241,7 +241,7 @@ const Home = () => {
           {/* 오늘 경기 목록 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                 ⚾ 오늘의 경기
               </h2>
               <button
@@ -362,7 +362,7 @@ const Home = () => {
           {/* KBO 팀 순위 표 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                 🏟️ KBO 팀 순위
               </h2>
               <button
