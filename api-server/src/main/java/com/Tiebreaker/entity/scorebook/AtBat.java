@@ -1,5 +1,6 @@
 package com.Tiebreaker.entity.scorebook;
 
+import com.Tiebreaker.constant.AtBatResult;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +31,7 @@ public class AtBat {
 
   // --- 타석 결과 ---
   @Enumerated(EnumType.STRING)
-  private String result; // 타석 결과 (Enum 타입으로 관리)
+  private AtBatResult result; // 타석 결과 (Enum 타입으로 관리)
   private String resultDetail; // 결과 상세 (예: "좌익수 앞 안타", "유격수 땅볼")
 
   // --- 결과로 인한 변화 ---

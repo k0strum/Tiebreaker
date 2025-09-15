@@ -37,50 +37,54 @@ function FloatingChatbot() {
     }
   }, [error])
 
-  // 드래그 기능
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-
-  const handleMouseDown = (e) => {
-    e.preventDefault()
-    setIsDragging(true)
-    const clientX = e.clientX || e.touches?.[0]?.clientX || 0
-    const clientY = e.clientY || e.touches?.[0]?.clientY || 0
-    setDragStart({
-      x: clientX - position.x,
-      y: clientY - position.y
-    })
-  }
-
-  const handleMouseMove = (e) => {
-    if (isDragging) {
-      const clientX = e.clientX || e.touches?.[0]?.clientX || 0
-      const clientY = e.clientY || e.touches?.[0]?.clientY || 0
-      setPosition({
-        x: clientX - dragStart.x,
-        y: clientY - dragStart.y
-      })
-    }
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      document.addEventListener('touchmove', handleMouseMove, { passive: false })
-      document.addEventListener('touchend', handleMouseUp)
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-        document.removeEventListener('touchmove', handleMouseMove)
-        document.removeEventListener('touchend', handleMouseUp)
-      }
-    }
-  }, [isDragging, dragStart])
+  // 드래그 기능 (요청에 따라 비활성화)
+  // const [isDragging, setIsDragging] = useState(false)
+  // const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  //
+  // const handleMouseDown = (e) => {
+  //   e.preventDefault()
+  //   setIsDragging(true)
+  //   const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+  //   const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+  //   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
+  //   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+  //   setDragStart({
+  //     x: (viewportWidth - clientX) - position.x,
+  //     y: (viewportHeight - clientY) - position.y
+  //   })
+  // }
+  //
+  // const handleMouseMove = (e) => {
+  //   if (isDragging) {
+  //     const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+  //     const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+  //     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
+  //     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+  //     setPosition({
+  //       x: (viewportWidth - clientX) - dragStart.x,
+  //       y: (viewportHeight - clientY) - dragStart.y
+  //     })
+  //   }
+  // }
+  //
+  // const handleMouseUp = () => {
+  //   setIsDragging(false)
+  // }
+  //
+  // useEffect(() => {
+  //   if (isDragging) {
+  //     document.addEventListener('mousemove', handleMouseMove)
+  //     document.addEventListener('mouseup', handleMouseUp)
+  //     document.addEventListener('touchmove', handleMouseMove, { passive: false })
+  //     document.addEventListener('touchend', handleMouseUp)
+  //     return () => {
+  //       document.removeEventListener('mousemove', handleMouseMove)
+  //       document.removeEventListener('mouseup', handleMouseUp)
+  //       document.removeEventListener('touchmove', handleMouseMove)
+  //       document.removeEventListener('touchend', handleMouseUp)
+  //     }
+  //   }
+  // }, [isDragging, dragStart])
 
   // WebSocket 연결
   useEffect(() => {
@@ -647,7 +651,7 @@ function FloatingChatbot() {
           <div className="text-sm text-gray-600">{getPositionKorean(stats.type)}</div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="space-y-1">
           {Object.entries(stats)
             .filter(([k]) => k !== 'type')
             .sort(([a], [b]) => {
@@ -708,9 +712,9 @@ function FloatingChatbot() {
               return aPriority - bPriority
             })
             .map(([k, v]) => (
-              <div key={k} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-gray-500 text-xs font-medium mb-1">{getStatKorean(k)}</div>
-                <div className="text-lg font-semibold text-gray-800">{String(v)}</div>
+              <div key={k} className="flex justify-between items-center py-2 px-3 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <span className="text-sm font-medium text-gray-700">{getStatKorean(k)}</span>
+                <span className="text-sm font-semibold text-gray-900">{String(v)}</span>
               </div>
             ))}
         </div>
@@ -722,19 +726,20 @@ function FloatingChatbot() {
               href={`http://localhost:5173/player/${content.playerId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline transition-colors"
+              className="block border border-gray-200 rounded-lg px-3 py-2 bg-white hover:bg-gray-50 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              선수 정보 바로가기
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-800 text-sm font-medium">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  선수 정보 바로가기
+                </div>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </a>
-          </div>
-        )}
-
-        {content.message && (
-          <div className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">
-            {content.message}
           </div>
         )}
       </div>
@@ -808,11 +813,11 @@ function FloatingChatbot() {
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${isOpen ? 'scale-110' : 'scale-100'
-          } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleMouseDown}
-        style={{ userSelect: 'none' }}
+        className={`w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${isOpen ? 'scale-110' : 'scale-100'}`}
+        // 드래그 비활성화
+        // onMouseDown={handleMouseDown}
+        // onTouchStart={handleMouseDown}
+        style={{ userSelect: 'none', cursor: 'pointer' }}
       >
         {isOpen ? (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,7 +838,7 @@ function FloatingChatbot() {
       {isOpen && (
         <div
           ref={chatbotRef}
-          className="absolute bottom-20 right-0 w-80 sm:w-96 h-[500px] sm:h-[600px] bg-white rounded-lg shadow-2xl border flex flex-col"
+          className="absolute bottom-20 right-0 w-80 sm:w-96 h-[600px] sm:h-[700px] bg-white rounded-lg shadow-2xl border flex flex-col"
         >
           <ErrorToast />
 
