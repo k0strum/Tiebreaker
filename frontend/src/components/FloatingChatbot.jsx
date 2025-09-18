@@ -38,53 +38,53 @@ function FloatingChatbot() {
   }, [error])
 
   // 드래그 기능 (요청에 따라 비활성화)
-  // const [isDragging, setIsDragging] = useState(false)
-  // const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  //
-  // const handleMouseDown = (e) => {
-  //   e.preventDefault()
-  //   setIsDragging(true)
-  //   const clientX = e.clientX || e.touches?.[0]?.clientX || 0
-  //   const clientY = e.clientY || e.touches?.[0]?.clientY || 0
-  //   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
-  //   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
-  //   setDragStart({
-  //     x: (viewportWidth - clientX) - position.x,
-  //     y: (viewportHeight - clientY) - position.y
-  //   })
-  // }
-  //
-  // const handleMouseMove = (e) => {
-  //   if (isDragging) {
-  //     const clientX = e.clientX || e.touches?.[0]?.clientX || 0
-  //     const clientY = e.clientY || e.touches?.[0]?.clientY || 0
-  //     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
-  //     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
-  //     setPosition({
-  //       x: (viewportWidth - clientX) - dragStart.x,
-  //       y: (viewportHeight - clientY) - dragStart.y
-  //     })
-  //   }
-  // }
-  //
-  // const handleMouseUp = () => {
-  //   setIsDragging(false)
-  // }
-  //
-  // useEffect(() => {
-  //   if (isDragging) {
-  //     document.addEventListener('mousemove', handleMouseMove)
-  //     document.addEventListener('mouseup', handleMouseUp)
-  //     document.addEventListener('touchmove', handleMouseMove, { passive: false })
-  //     document.addEventListener('touchend', handleMouseUp)
-  //     return () => {
-  //       document.removeEventListener('mousemove', handleMouseMove)
-  //       document.removeEventListener('mouseup', handleMouseUp)
-  //       document.removeEventListener('touchmove', handleMouseMove)
-  //       document.removeEventListener('touchend', handleMouseUp)
-  //     }
-  //   }
-  // }, [isDragging, dragStart])
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  const handleMouseDown = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+    setDragStart({
+      x: (viewportWidth - clientX) - position.x,
+      y: (viewportHeight - clientY) - position.y
+    })
+  }
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+      const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+      setPosition({
+        x: (viewportWidth - clientX) - dragStart.x,
+        y: (viewportHeight - clientY) - dragStart.y
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleMouseMove, { passive: false })
+      document.addEventListener('touchend', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('touchmove', handleMouseMove)
+        document.removeEventListener('touchend', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragStart])
 
   // WebSocket 연결
   useEffect(() => {
@@ -809,14 +809,14 @@ function FloatingChatbot() {
         transform: 'translate(0, 0)'
       }}
     >
-      {/* 플로팅 챗봇 버튼 */}
+      {/* 플로팅 챗봇 버튼 */} 
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${isOpen ? 'scale-110' : 'scale-100'}`}
         // 드래그 비활성화
-        // onMouseDown={handleMouseDown}
-        // onTouchStart={handleMouseDown}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleMouseDown}
         style={{ userSelect: 'none', cursor: 'pointer' }}
       >
         {isOpen ? (
