@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # === Kafka & ZooKeeper ===
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: tiebreaker-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: tiebreaker-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  # === API Server (Spring Boot) ===
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    container_name: tiebreaker-api
+    ports:
+      - "8080:8080"
+    environment:
+      # 데이터베이스 설정
+      - DB_HOST=${DB_HOST}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      
+      # JWT 설정
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_VALIDITY=${JWT_VALIDITY}
+      
+      # Kafka 설정
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      
+      # 프론트엔드 URL
+      - FRONTEND_URL=${FRONTEND_URL}
+      
+      # 이메일 설정
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      
+      # 소셜 로그인 설정
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+    depends_on:
+      - kafka
+    volumes:
+      - ./images:/app/images
+    env_file:
+      - .env
+
+  # === Data Collector (Flask) ===
+  data-collector:
+    build:
+      context: ./data-collector
+      dockerfile: Dockerfile
+    container_name: tiebreaker-collector
+    ports:
+      - "5000:5000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    env_file:
+      - .env
+
+  # === Frontend (Nginx) ===
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tiebreaker-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api-server
+
+networks:
+  default:
+    name: tiebreaker-network

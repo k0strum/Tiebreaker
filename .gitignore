@@ -33,3 +33,4 @@ images/
 
 # Spring Boot application properties (보안상 민감한 정보 포함)
 api-server/src/main/resources/application.properties
+.env
