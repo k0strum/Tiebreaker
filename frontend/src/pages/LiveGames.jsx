@@ -46,7 +46,7 @@ const LiveGames = () => {
 
   const startSimulation = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/simulator/start');
+      const res = await axios.post('/collector/api/simulator/start');
       const msg = res?.data?.message || '시뮬레이터 시작';
       alert(msg);
     } catch (e) {

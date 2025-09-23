@@ -82,7 +82,7 @@ function PlayerDetail() {
     if (!imageUrl) return '';
 
     // 파일명만 저장되므로 바로 API 경로와 결합
-    return `http://localhost:8080/api/player/images/${imageUrl}`;
+    return `${window.location.origin}/api/player/images/${imageUrl}`;
   };
 
   // 이미지 로드 실패 처리 함수

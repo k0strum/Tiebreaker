@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
     // 백엔드 API 경로인 경우 (예: /api/members/images/profile/xxx.jpg)
     if (imageUrl.startsWith('/api/')) {
-      return `http://localhost:8080${imageUrl}`;
+      return `${window.location.origin}${imageUrl}`;
     }
 
     // 기본 이미지인 경우

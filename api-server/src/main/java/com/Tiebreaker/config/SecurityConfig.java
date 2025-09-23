@@ -89,7 +89,15 @@ public class SecurityConfig {
                                 response.getWriter().write("{\"message\":\"인증이 필요합니다.\"}");
                             } else {
                                 // 웹 페이지 요청의 경우 프론트엔드로 리다이렉트
-                                response.sendRedirect("http://localhost:5173/login");
+                                String scheme = request.getHeader("X-Forwarded-Proto");
+                                String host = request.getHeader("X-Forwarded-Host");
+                                if (scheme == null || scheme.isEmpty())
+                                    scheme = request.getScheme();
+                                if (host == null || host.isEmpty())
+                                    host = request.getServerName()
+                                            + (request.getServerPort() > 0 ? ":" + request.getServerPort() : "");
+                                String frontend = scheme + "://" + host;
+                                response.sendRedirect(frontend + "/login");
                             }
                         }));
 
@@ -99,7 +107,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Vite 기본 포트
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

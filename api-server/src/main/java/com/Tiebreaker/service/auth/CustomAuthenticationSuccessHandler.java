@@ -41,7 +41,13 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().toString());
 
             // 프론트엔드로 리다이렉트 (토큰을 URL 파라미터로 전달)
-            String frontendUrl = "http://localhost:5173";
+            String scheme = request.getHeader("X-Forwarded-Proto");
+            String host = request.getHeader("X-Forwarded-Host");
+            if (scheme == null || scheme.isEmpty())
+                scheme = request.getScheme();
+            if (host == null || host.isEmpty())
+                host = request.getServerName() + (request.getServerPort() > 0 ? ":" + request.getServerPort() : "");
+            String frontendUrl = scheme + "://" + host;
             String redirectUrl = String.format("%s/oauth-callback?token=%s&loginType=%s&success=true",
                     frontendUrl,
                     java.net.URLEncoder.encode(token, "UTF-8"),

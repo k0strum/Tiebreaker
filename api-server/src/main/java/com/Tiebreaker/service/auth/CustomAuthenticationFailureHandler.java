@@ -20,17 +20,17 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private final ObjectMapper objectMapper;
 
-        @Override
+    @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-                                       AuthenticationException exception) throws IOException, ServletException {
-        
+            AuthenticationException exception) throws IOException, ServletException {
+
         String errorMessage = "인증에 실패했습니다.";
         String errorCode = "AUTHENTICATION_FAILED";
-        
+
         if (exception instanceof OAuth2AuthenticationException) {
             OAuth2AuthenticationException oauthException = (OAuth2AuthenticationException) exception;
             String oauthErrorCode = oauthException.getError().getErrorCode();
-            
+
             if ("email_exists".equals(oauthErrorCode)) {
                 errorMessage = "이미 해당 이메일로 가입된 계정이 있습니다. 일반 로그인을 이용해 주세요.";
                 errorCode = "EMAIL_EXISTS";
@@ -41,12 +41,18 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         } else {
             errorMessage = "인증에 실패했습니다: " + exception.getMessage();
         }
-        
+
         // 프론트엔드로 리다이렉트 (에러 정보를 URL 파라미터로 전달)
-        String frontendUrl = "http://localhost:5173";
-        String redirectUrl = String.format("%s/oauth-callback?success=false&errorCode=%s&message=%s", 
-            frontendUrl, errorCode, java.net.URLEncoder.encode(errorMessage, "UTF-8"));
-        
+        String scheme = request.getHeader("X-Forwarded-Proto");
+        String host = request.getHeader("X-Forwarded-Host");
+        if (scheme == null || scheme.isEmpty())
+            scheme = request.getScheme();
+        if (host == null || host.isEmpty())
+            host = request.getServerName() + (request.getServerPort() > 0 ? ":" + request.getServerPort() : "");
+        String frontendUrl = scheme + "://" + host;
+        String redirectUrl = String.format("%s/oauth-callback?success=false&errorCode=%s&message=%s",
+                frontendUrl, errorCode, java.net.URLEncoder.encode(errorMessage, "UTF-8"));
+
         response.sendRedirect(redirectUrl);
     }
 }

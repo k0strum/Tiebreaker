@@ -114,7 +114,7 @@ const LiveGame = () => {
   useEffect(() => {
     // STOMP 네이티브 WebSocket 연결 (SockJS 이슈 회피)
     const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const brokerURL = `${wsProtocol}://localhost:8080/ws-native`;
+    const brokerURL = `${wsProtocol}://${location.host}/ws-native`;
     const client = new StompClient({
       brokerURL,
       reconnectDelay: 3000,

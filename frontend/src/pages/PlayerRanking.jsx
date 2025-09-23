@@ -113,8 +113,9 @@ function PlayerStats() {
   // 이미지 URL 생성 (백엔드에 파일명만 저장됨. 과거 데이터의 전체 경로도 처리)
   const getPlayerImageUrl = (imageUrl) => {
     if (!imageUrl) return '';
+    const base = import.meta.env.VITE_API_BASE_URL || window.location.origin;
     const fileName = imageUrl.startsWith('/api/') ? imageUrl.split('/').pop() : imageUrl;
-    return `http://localhost:8080/api/player/images/${fileName}`;
+    return `${base}/api/player/images/${fileName}`;
   };
 
   // 이미지 로드 실패 시 이모지로 대체

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 
 // 백엔드 베이스 URL (환경변수 우선)
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const mcpBase = import.meta.env.VITE_MCP_BASE_URL || 'ws://localhost:8080/mcp'
 const resolveLogoUrl = (url) => {
   if (!url) return url
   if (url.startsWith('/')) return `${apiBase}${url}`
@@ -93,7 +94,7 @@ function FloatingChatbot() {
     }
 
     const connectWebSocket = () => {
-      const ws = new WebSocket('ws://localhost:8080/mcp')
+      const ws = new WebSocket(mcpBase)
 
       ws.onopen = () => {
         setIsConnected(true)
@@ -723,7 +724,7 @@ function FloatingChatbot() {
         {content.playerId && (
           <div className="mt-4 pt-3 border-t border-gray-200">
             <a
-              href={`http://localhost:5173/player/${content.playerId}`}
+              href={`${apiBase}/player/${content.playerId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block border border-gray-200 rounded-lg px-3 py-2 bg-white hover:bg-gray-50 transition-colors"
@@ -809,7 +810,7 @@ function FloatingChatbot() {
         transform: 'translate(0, 0)'
       }}
     >
-      {/* 플로팅 챗봇 버튼 */} 
+      {/* 플로팅 챗봇 버튼 */}
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}

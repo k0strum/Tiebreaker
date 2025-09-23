@@ -19,12 +19,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     // 클라이언트가 연결할 STOMP 엔드포인트
     // SockJS 전용(브라우저 폴백)
     registry.addEndpoint("/ws")
-        .setAllowedOrigins(frontendUrl, "http://localhost:5173")
+        .setAllowedOriginPatterns("*")
         .withSockJS();
 
     // 네이티브 WebSocket 전용(포스트맨/원 WS 클라이언트)
     registry.addEndpoint("/ws-native")
-        .setAllowedOrigins(frontendUrl, "http://localhost:5173");
+        .setAllowedOriginPatterns("*");
   }
 
   @Override
