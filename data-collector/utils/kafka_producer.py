@@ -2,8 +2,9 @@ import time
 import json
 import logging
 from kafka import KafkaProducer
+import os
 
-def create_kafka_producer(bootstrap_servers=['localhost:9092'], max_retries=10):
+def create_kafka_producer(bootstrap_servers=None, max_retries=10):
     """
     Kafka Producer를 생성하고 연결을 시도합니다.
     
@@ -14,6 +15,11 @@ def create_kafka_producer(bootstrap_servers=['localhost:9092'], max_retries=10):
     Returns:
         KafkaProducer 인스턴스 또는 None (실패 시)
     """
+    # 환경변수 우선, 함수 인자 다음, 마지막 기본값
+    if bootstrap_servers is None:
+        env_bootstrap = os.environ.get('KAFKA_BOOTSTRAP_SERVERS')
+        bootstrap_servers = env_bootstrap.split(',') if env_bootstrap else ['kafka:29092']
+
     retries = max_retries
     while retries > 0:
         try:

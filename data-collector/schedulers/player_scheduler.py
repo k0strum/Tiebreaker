@@ -20,7 +20,8 @@ def schedule_player_collection():
                 return
             
             # 선수 데이터 수집 및 전송
-            for player in scrape_all_players_and_details():
+            players = scrape_all_players_and_details() or []
+            for player in players:
                 logging.info(f"선수 정보 전송 중: {player.get('playerName', '알 수 없는 선수')}")
                 # 1) 연간(통합) 데이터 전송
                 producer.send(kafka['topic_player_yearly'], value=player)
@@ -53,8 +54,10 @@ def schedule_player_collection():
     # 하루에 한 번 실행 (매일 새벽 4시)
     scheduler.add_job(collect_and_send, 'cron', hour=4, minute=0, id='player_collection')
     
-    # 즉시 첫 번째 실행
-    # collect_and_send()
+    # 즉시 첫 실행은 환경변수로 제어 (기본 비활성화)
+    import os
+    if os.environ.get('RUN_PLAYER_COLLECT_IMMEDIATELY', 'false').lower() == 'true':
+        collect_and_send()
     
     # 스케줄러 시작
     scheduler.start()

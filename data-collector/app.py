@@ -17,8 +17,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Flask 애플리케이션 인스턴스 생성
 app = Flask(__name__)
-# CORS 설정: Vite 개발서버에서 오는 요청 허용
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}})
+# CORS 설정: 배포에서는 동일 출처, 필요 시 환경변수로 오버라이드
+import os
+frontend_origin = os.environ.get('FRONTEND_URL')
+if frontend_origin:
+    CORS(app, resources={r"/api/*": {"origins": [frontend_origin]}})
+else:
+    # 기본은 동일 출처 허용(프록시 경유), 개발 시 로컬도 허용
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}})
 
 # Blueprint 등록
 app.register_blueprint(team_rank_bp)
@@ -191,8 +197,9 @@ def api_simulator_status():
 atexit.register(cleanup_schedulers)
 
 # Flask 개발 서버 실행
+# Gunicorn 등 WSGI 서버에서도 임포트 시 1회 초기화되도록 보장
+initialize_schedulers_once()
+
 if __name__ == '__main__':
-    # 스케줄러 초기화
-    initialize_schedulers_once()
-    # Flask 서버 시작
+    # Flask 개발 서버 실행 시
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)

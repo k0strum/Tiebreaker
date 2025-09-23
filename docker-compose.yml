@@ -46,7 +46,7 @@ services:
       - JWT_VALIDITY=${JWT_VALIDITY}
       
       # Kafka 설정
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       
       # 프론트엔드 URL
       - FRONTEND_URL=${FRONTEND_URL}
@@ -80,7 +80,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - kafka
     env_file:

@@ -6,7 +6,7 @@ def get_config():
     """
     return {
         'kafka': {
-            'bootstrap_servers': 'localhost:9092',
+            'bootstrap_servers': 'kafka:29092',
             'topic_player_yearly': 'kbo-player-yearly',
             'topic_player_monthly': 'kbo-player-monthly',
             'topic_team_rank_data': 'kbo-team-rank-data',
