@@ -690,13 +690,24 @@ def scrape_all_players_and_details():
     Yields:
         dict: 선수 정보 딕셔너리
     """
-    print("[DEBUG] scrape_all_players_and_details 함수에 진입했습니다.")
-    config = get_config()
+    print("[DEBUG] ========== scrape_all_players_and_details 함수 시작 ==========")
+    print("[DEBUG] 함수에 진입했습니다.")
+    
+    # 설정 로드
+    try:
+        config = get_config()
+        print(f"[DEBUG] 설정 로드 성공: kafka={config['kafka']['bootstrap_servers']}, headless={config['webdriver']['headless']}")
+    except Exception as e:
+        print(f"[ERROR] 설정 로드 실패: {e}")
+        return
+    
     options = webdriver.ChromeOptions()
 
     # --- 옵션 설정 ---
+    print("[DEBUG] Chrome WebDriver 옵션 설정 중...")
     if config['webdriver']['headless']:
         options.add_argument('--headless')
+        print("[DEBUG] Headless 모드 활성화")
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--window-size=1920,1080')
@@ -709,54 +720,85 @@ def scrape_all_players_and_details():
     options.add_argument('--log-level=3')  # 오류만 표시
     options.add_argument('--silent')
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    
+    # EC2 환경 최적화 옵션
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--disable-background-timer-throttling')
+    options.add_argument('--disable-backgrounding-occluded-windows')
+    options.add_argument('--disable-renderer-backgrounding')
 
-    print("[DEBUG] WebDriver 옵션 설정을 완료했습니다. 이제 드라이버 초기화를 시도합니다...")
+    print("[DEBUG] WebDriver 옵션 설정 완료")
 
     driver = None
     producer = None
     
     try:
+        print("[DEBUG] Kafka Producer 초기화 시도 중...")
         # Kafka Producer 초기화
         producer = create_kafka_producer([config['kafka']['bootstrap_servers']])
         if not producer:
             print("[ERROR] Kafka Producer 초기화 실패")
             return
+        print("[DEBUG] Kafka Producer 초기화 성공")
         
+        print("[DEBUG] Chrome WebDriver 초기화 시도 중...")
         driver = webdriver.Chrome(options=options)
         driver.set_page_load_timeout(30)
-        print("[DEBUG] WebDriver 초기화에 성공했습니다!")
+        print("[DEBUG] WebDriver 초기화 성공!")
+        
     except Exception as e:
-        print(f"[CRITICAL] 초기화 중 심각한 오류가 발생했습니다: {e}")
+        print(f"[CRITICAL] 초기화 중 심각한 오류 발생: {e}")
+        print(f"[CRITICAL] 오류 타입: {type(e).__name__}")
+        import traceback
+        print(f"[CRITICAL] 스택 트레이스:\n{traceback.format_exc()}")
         return
 
     try:
+        print("[DEBUG] ========== 크롤링 작업 시작 ==========")
         # team_codes = ['LG', 'OB', 'HH', 'HT', 'SS', 'KT', 'SK', 'LT', 'NC', 'WO']
         team_codes = ['SK', 'OB', 'HH', 'HT', 'SS', 'KT', 'LG', 'LT', 'NC', 'WO']
         search_url = "https://www.koreabaseball.com/Player/Search.aspx"
         wait = WebDriverWait(driver, 15)
         
+        print(f"[DEBUG] 대상 팀: {team_codes}")
+        print(f"[DEBUG] 검색 URL: {search_url}")
+        
+        # 수집 통계 변수
+        total_players_processed = 0
+        total_players_collected = 0
+        
         for team_code in team_codes:
             team_name = TEAM_CODE_TO_NAME.get(team_code, f"팀코드_{team_code}")
-            print(f"\n{team_code} 팀({team_name}) 목록 수집 시작...")
+            print(f"\n[DEBUG] ========== {team_code} 팀({team_name}) 처리 시작 ==========")
             current_page_num = 1
+            team_players_processed = 0
+            team_players_collected = 0
             
             while True:
+                print(f"[DEBUG] {team_code} 팀 {current_page_num} 페이지 이동 시도...")
                 # 페이지 이동 시도
                 if not navigate_to_team_page(driver, wait, search_url, team_code, current_page_num):
-                    print(f"    {current_page_num} 페이지를 찾을 수 없어 '{team_code}' 팀 수집을 종료합니다.")
+                    print(f"[DEBUG] {current_page_num} 페이지를 찾을 수 없어 '{team_code}' 팀 수집을 종료합니다.")
                     break
 
                 # 현재 페이지의 선수 수를 파악
+                print(f"[DEBUG] {team_code} 팀 {current_page_num} 페이지의 선수 링크 수집 중...")
                 all_links = get_player_links(driver, wait)
                 num_players_on_page = len(all_links)
+                print(f"[DEBUG] 페이지에서 발견된 선수 수: {num_players_on_page}명")
+                
                 if num_players_on_page == 0:
+                    print(f"[DEBUG] 선수가 없는 페이지 발견. {team_code} 팀 수집 종료.")
                     break
 
-                print(f"\n--- {team_code} 팀 {current_page_num} 페이지({num_players_on_page}명) 처리 시작 ---")
+                print(f"\n[DEBUG] --- {team_code} 팀 {current_page_num} 페이지({num_players_on_page}명) 처리 시작 ---")
                 
                 # 한 페이지 내의 선수들을 순회
                 for i in range(num_players_on_page):
                     player_name = ""
+                    team_players_processed += 1
+                    total_players_processed += 1
                     try:
                         # 선수 한 명을 처리하기 위해 페이지를 처음부터 다시 로드하고 이동
                         if not navigate_to_team_page(driver, wait, search_url, team_code, current_page_num):
@@ -906,6 +948,8 @@ def scrape_all_players_and_details():
                         
                         # Kafka로 데이터 전송
                         send_player_data_to_kafka(producer, player_data)
+                        team_players_collected += 1
+                        total_players_collected += 1
                         
                         # 선수 처리 후 랜덤 대기 (서버 부하 방지 및 봇 탐지 회피)
                         time.sleep(random.uniform(0.1, 0.3))
@@ -919,10 +963,25 @@ def scrape_all_players_and_details():
                 current_page_num += 1
                 # 페이지 이동 후 랜덤 대기
                 time.sleep(random.uniform(0.3, 0.6))
+            
+            # 팀별 완료 통계
+            print(f"[DEBUG] ========== {team_code} 팀({team_name}) 완료 ==========")
+            print(f"[DEBUG] 처리된 선수: {team_players_processed}명")
+            print(f"[DEBUG] 수집 성공: {team_players_collected}명")
+            print(f"[DEBUG] 성공률: {(team_players_collected/team_players_processed*100):.1f}%" if team_players_processed > 0 else "[DEBUG] 성공률: 0%")
     
     finally:
         if 'driver' in locals() and driver:
+            print("[DEBUG] WebDriver 종료 중...")
             driver.quit()
         if 'producer' in locals() and producer:
+            print("[DEBUG] Kafka Producer 종료 중...")
             producer.close()
+        
+        # 최종 통계 출력
+        print("\n[DEBUG] ========== 최종 수집 결과 ==========")
+        print(f"[DEBUG] 전체 처리된 선수: {total_players_processed}명")
+        print(f"[DEBUG] 전체 수집 성공: {total_players_collected}명")
+        print(f"[DEBUG] 전체 성공률: {(total_players_collected/total_players_processed*100):.1f}%" if total_players_processed > 0 else "[DEBUG] 전체 성공률: 0%")
+        print("[DEBUG] ========== 수집 작업 완료 ==========")
         print("\n모든 선수 정보 수집 완료.")

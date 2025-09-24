@@ -20,29 +20,8 @@ def schedule_player_collection():
                 return
             
             # 선수 데이터 수집 및 전송
-            players = scrape_all_players_and_details() or []
-            for player in players:
-                logging.info(f"선수 정보 전송 중: {player.get('playerName', '알 수 없는 선수')}")
-                # 1) 연간(통합) 데이터 전송
-                producer.send(kafka['topic_player_yearly'], value=player)
-
-                # 2) 월간 데이터가 포함되어 있다면 별도 토픽으로 전송
-                monthly_payload = {}
-                has_batter_monthly = bool(player.get('batterMonthlyStats'))
-                has_pitcher_monthly = bool(player.get('pitcherMonthlyStats'))
-                if 'id' in player and (has_batter_monthly or has_pitcher_monthly):
-                    monthly_payload['playerId'] = player['id']
-                    if has_batter_monthly:
-                        monthly_payload['batter'] = player['batterMonthlyStats']
-                    if has_pitcher_monthly:
-                        monthly_payload['pitcher'] = player['pitcherMonthlyStats']
-                    producer.send(kafka['topic_player_monthly'], value=monthly_payload)
-                    total_months = (len(monthly_payload.get('batter', [])) if has_batter_monthly else 0) + \
-                                   (len(monthly_payload.get('pitcher', [])) if has_pitcher_monthly else 0)
-                    logging.info(f"월간 전송: playerId={player['id']} months={total_months} (B:{len(monthly_payload.get('batter', [])) if has_batter_monthly else 0}, P:{len(monthly_payload.get('pitcher', [])) if has_pitcher_monthly else 0})")
-            
-            producer.flush()
-            producer.close()
+            logging.info("선수 정보 수집을 시작합니다...")
+            scrape_all_players_and_details()  # 이 함수가 내부에서 직접 Kafka로 전송
             logging.info("모든 선수 정보가 Kafka로 전송되었습니다.")
             
         except Exception as e:
@@ -55,9 +34,7 @@ def schedule_player_collection():
     scheduler.add_job(collect_and_send, 'cron', hour=4, minute=0, id='player_collection')
     
     # 즉시 첫 실행은 환경변수로 제어 (기본 비활성화)
-    import os
-    if os.environ.get('RUN_PLAYER_COLLECT_IMMEDIATELY', 'false').lower() == 'true':
-        collect_and_send()
+    collect_and_send()
     
     # 스케줄러 시작
     scheduler.start()
