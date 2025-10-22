@@ -1,4 +1,4 @@
-# KBO 팬 플랫폼 프로젝트 Tiebreaker
+# ⚾ KBO 팬 플랫폼 프로젝트 Tiebreaker
 <table>
   <tr>
     <td>
@@ -13,14 +13,19 @@
       portfolio
     </td>
     <td>
-      [tiebreaker_portfolio](gitFiles/tiebreaker_portfolio.pdf)
+      <a href="https://github.com/k0strum/Tiebreaker/blob/main/gitFiles/tiebreaker_portfolio.pdf">Tiebreak_portfolio</a>
     </td>
   </tr>
 </table>
 
-## 1. 프로젝트 개요
+**목차**
+1.  [프로젝트 개요](#1-프로젝트-개요)
+2.  [기술 스택](#2-기술-스택)
+3.  [주요 기능](#3-주요-기능)
+4.  [시스템 아키텍쳐](#4-시스템-아키텍쳐)   
 
->   흩어져 있는 KBO 경기 정보, 선수 기록, 팬 커뮤니티를 하나의 공간에 통합하고,
+## 1. 프로젝트 개요
+>   흩어져 있는 KBO 경기 정보, 선수 기록, 팬 커뮤니티를 하나의 공간에 통합하고,   
 >   실시간 소통과 데이터 기록의 재미를 더한 차세대 KBO 팬 플랫폼입니다.
 ## 2. 기술 스택
 
@@ -61,6 +66,6 @@
 - 야구 정보 챗봇: 선수 기록, 경기 일정 등 간단한 야구 정보를 실시간으로 확인하는 챗봇
 <img width="700" alt="Image" src="https://github.com/user-attachments/assets/c2a1d5c0-145b-4b95-b9b9-ea16452d974d" /><br>
 
-## 4. 시스템 아키텍처
+## 4. 시스템 아키텍쳐
 <img width="800" alt="Image" src="https://github.com/user-attachments/assets/9cc7518c-7363-4467-82f8-3e8329b3cd9e" /><br/>
 ------------------------------------------------------------------------------------------------------------------------------
