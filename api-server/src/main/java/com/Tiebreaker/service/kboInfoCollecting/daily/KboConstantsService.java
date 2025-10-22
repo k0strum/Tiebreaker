@@ -25,7 +25,7 @@ public class KboConstantsService {
 
   private final KboConstantsRepository kboConstantsRepository;
 
-  private static final String KBO_CONSTANTS_URL = "https://statiz.sporki.com/stats/?m=const";
+  private static final String KBO_CONSTANTS_URL = "https://statiz.co.kr/stats/?m=const";
 
   // 매일 새벽: 최신 연도 우선 갱신
   @Scheduled(cron = "0 0 2 * * *")
