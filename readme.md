@@ -1,8 +1,8 @@
-# ⚾ KBO 팬 플랫폼 프로젝트 Tiebreaker
+# <a id="top"></a>⚾ KBO 팬 플랫폼 프로젝트 Tiebreaker
 <table>
   <tr>
     <td>
-      <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white" />
+      Notion
     </td>
     <td>
       https://www.notion.so/Personal-Project-Tiebreaker-273237f77cdb81edab39f8e0f50dbe40   
@@ -10,7 +10,7 @@
   </tr>
   <tr>
     <td>
-      portfolio
+      Portfolio
     </td>
     <td>
       <a href="https://github.com/k0strum/Tiebreaker/blob/main/gitFiles/tiebreaker_portfolio.pdf">Tiebreak_portfolio</a>
@@ -18,7 +18,7 @@
   </tr>
 </table>
 
-**목차**
+### 목차
 1.  [프로젝트 개요](#1-프로젝트-개요)
 2.  [기술 스택](#2-기술-스택)
 3.  [주요 기능](#3-주요-기능)
@@ -67,5 +67,6 @@
 <img width="700" alt="Image" src="https://github.com/user-attachments/assets/c2a1d5c0-145b-4b95-b9b9-ea16452d974d" /><br>
 
 ## 4. 시스템 아키텍쳐
-<img width="800" alt="Image" src="https://github.com/user-attachments/assets/9cc7518c-7363-4467-82f8-3e8329b3cd9e" /><br/>
-------------------------------------------------------------------------------------------------------------------------------
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/70e8ee1f-eefe-4b03-bdf9-b4149a4c13b9" />
+
+[맨 위로 이동](#top)
