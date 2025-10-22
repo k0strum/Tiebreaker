@@ -11,7 +11,7 @@
 **B. Backend (메인 API 서버) - 기술: Spring Boot, JPA, Java**
    * **역할/선정 이유:** 안정적인 비즈니스 로직 처리, 세이버메트릭스 계산, 챗봇 등 핵심 기능을 담당합니다.
 
-**C. Data Collector (데이터 수집 서버) - 기술: Python Flask**
+**C. Data Collector (데이터 수집 서버) - 기술: Python**
    * **역할/선정 이유:** 외부 사이트에서 경기 및 선수 데이터를 크롤링. 세이버메트릭스 계산에 필요한 원본 데이터를 수집합니다.
 
 **D. Database (영구 데이터 저장) - 기술: MySQL**
