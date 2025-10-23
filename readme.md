@@ -51,22 +51,22 @@
 
 **A. 데이터/기록**
 - 경기 일정 정보: 이전 경기의 결과, 진행 예정 경기 정보 등 경기 데이터 제공   
-<img width="700" alt="Image" src="https://github.com/user-attachments/assets/69775e64-51ad-4433-a4a6-8cdb5ebbe281" /><br/>
+<img width="500" alt="Image" src="https://github.com/user-attachments/assets/69775e64-51ad-4433-a4a6-8cdb5ebbe281" /><br/>
 - 선수 기록실: 시즌 성적, 개인 프로필 등 조회 및 월별/연도별 성적 추이 등 데이터 시각화 제공
-<img width="700" alt="Image" src="https://github.com/user-attachments/assets/814ec876-b628-4683-a5ad-2968eabe42a8" /><br/>
-<img width="700" height="593" alt="Image" src="https://github.com/user-attachments/assets/ef6f9385-081b-4666-a0d5-ea88f51ef837" /><br/>
+<img width="500" alt="Image" src="https://github.com/user-attachments/assets/814ec876-b628-4683-a5ad-2968eabe42a8" /><br/>
+<img width="500" height="593" alt="Image" src="https://github.com/user-attachments/assets/ef6f9385-081b-4666-a0d5-ea88f51ef837" /><br/>
 
 **B. 실시간 경기 중계**
 - 실시간 스코어보드: 현재 진행 중인 경기의 상황(스코어, 주자, SBO)실시간 제공
-<img width="700" alt="Image" src="https://github.com/user-attachments/assets/ed95f2a3-642d-49ef-ace8-7a17be1b0f66" /><br/>
+<img width="500" alt="Image" src="https://github.com/user-attachments/assets/ed95f2a3-642d-49ef-ace8-7a17be1b0f66" /><br/>
 - 경기별 다중 채팅방: 각 경기마다 생성되는 실시간 채팅방에서 팬들 간의 응원 및 정보 교류   
-<img width="700" height="285" alt="Image" src="https://github.com/user-attachments/assets/289bdac2-cb4c-401b-a53e-bfa5c151f0c4" /><br/>
+<img width="500" height="285" alt="Image" src="https://github.com/user-attachments/assets/289bdac2-cb4c-401b-a53e-bfa5c151f0c4" /><br/>
 
 **C. 챗봇**
 - 야구 정보 챗봇: 선수 기록, 경기 일정 등 간단한 야구 정보를 실시간으로 확인하는 챗봇
-<img width="700" alt="Image" src="https://github.com/user-attachments/assets/c2a1d5c0-145b-4b95-b9b9-ea16452d974d" /><br>
+<img width="500" alt="Image" src="https://github.com/user-attachments/assets/c2a1d5c0-145b-4b95-b9b9-ea16452d974d" /><br>
 
 ## 4. 시스템 아키텍쳐
-<img width="800" alt="Image" src="https://github.com/user-attachments/assets/70e8ee1f-eefe-4b03-bdf9-b4149a4c13b9" />
+<img width="700" alt="Image" src="https://github.com/user-attachments/assets/70e8ee1f-eefe-4b03-bdf9-b4149a4c13b9" />
 
 [맨 위로 이동](#top)
